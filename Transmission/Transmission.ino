@@ -1,3 +1,5 @@
+//TODO: SD card data logging
+
 #include <SoftwareSerial.h>
 
 // **Transmission related variables
@@ -76,10 +78,6 @@ void loop() {
 
   // Reset to process next packet
   started = false; ended = false; packetIndex = 0;
-
-
-  // Setup packet for transmission
-  String transmissionPacket = "(";
   
   // Check that all sensor readings have been received
   for (byte i = 0; i < numSensors; i++) {
@@ -90,7 +88,8 @@ void loop() {
     if (i == numSensors - 1) {
       // We've reached the last index and all have been true,
       // therefore we've received all the sensor readings,
-      // send the sensor data;
+      // send the sensor data
+      sensorReadings[sizeof(sensorReadings) - 1] = ')'; // Terminate the packet
       Serial1.print(sensorReadings);
       emptyArray(sensorReadings);
     }
