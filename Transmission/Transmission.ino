@@ -1,6 +1,6 @@
 #include <SoftwareSerial.h>
 
-// Transmission related variables
+// **Transmission related variables
 unsigned long RXbaudRate = 57600; // UPDATE if changed
 #define numSensors 10 // UPDATE if changed
 #define valueChars 5 // UPDATE if changed
@@ -11,18 +11,20 @@ bool readSensor[numSensors];
 char sensorReadings[transmissionPacketSize]; 
 
 
-// Sensor reading variables
+// **Sensor reading variables
 SoftwareSerial sensorSerial;
 unsigned long sensorBaudRate = 57600; // UPDATE if changed
 #define startChar '('
 #define endChar ')'
 #define packetLength 7 // UPDATE if changed, excluding the start and endChars
 #define keyLength 2 // UPDATE if changed
-#define valueLength packetLength - keyLength
+#define valueLength valueChars // UPDATE if changed
+#define RSTX 2 // UPDATE if changed
+#define RSRX 3 // UPDATE if changed
 char packetKey[keyLength];
 char packetValue[valueLength];
 
-// Packet processing variables
+// **Packet processing variables
 bool started = false;
 bool ended = false;
 byte packetIndex = 0;
@@ -31,7 +33,7 @@ void setup() {
   // Setup serials
   Serial.begin(RXbaudRate); // Debug serial
   Serial1.begin(RXbaudRate); // Transceiver serial
-  sensorSerial.begin(sensorBaudRate, 2, 3); // RS485 serial
+  sensorSerial.begin(sensorBaudRate, RSTX, RSRX); // RS485 serial
 }
 
 void loop() {
@@ -57,10 +59,13 @@ void loop() {
   }
 
   if (started && ended && packetIndex == packetLength - 1) {
-    // Process this packet of format index[0-1], value[2-11]
+    // Process this packet of format (index[keyLength]value[valueLength])
     int index = atoi(packetKey);
-    int value = atoi(packetValue);
-    sensorReadings[index] = value;
+    for (int i = 0; i < sizeof(packetValue); i++) {
+      // Set values for sensor readings such that sensor readings
+      // are separated by valueLength and added to the correct index
+      sensorReadings[(index - 1) * valueLength + 1 + i] = packetValue[i];
+    }
     // We've read this sensor's value so set it to true,
     // index - 1 because our sensor ids start at 1
     readSensor[index - 1] = true;
