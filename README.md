@@ -1,7 +1,7 @@
 # Packet-Decode
 Decode data packets streaming wirelessly into the ground station.
 
-Data packets are of format *(NNxxxxx)*.
+Data packets are of format **(NNxxxxx)**.
 
 NN is the integer ID of the sensor. Guaranteed to be 2 characters. For example, sensor ID 1 will be 0 padded to 01.
 
