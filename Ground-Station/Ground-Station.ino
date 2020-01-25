@@ -1,4 +1,7 @@
-//TODO: SD card data logging
+//TODO: Command encode, send
+//TODO: Read switch states
+//TODO: Send data to computer
+
 
 #include <SoftwareSerial.h>
 
