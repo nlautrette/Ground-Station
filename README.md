@@ -7,4 +7,4 @@ NN is the integer ID of the sensor. Guaranteed to be 2 characters. For example, 
 
 xxxxx is the sensor reading, in arbitary units mapped to the sensor ID. Guaranteed to be 2 characters. For example, a reading of 1 will be 0 padded to 00001.
 
-'(' and ')' are set packet start and termination packets.
+'(' and ')' are determined packet start and termination packets.
