@@ -13,7 +13,7 @@ bool readSensor[numSensors];
 char sensorReadings[transmissionPacketSize]; 
 
 
-// **Sensor reading variables
+// **Sensor packet reading variables
 SoftwareSerial sensorSerial;
 unsigned long sensorBaudRate = 57600; // UPDATE if changed
 #define startChar '('
