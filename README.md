@@ -1,4 +1,8 @@
 # Ground-Station
+## Setup:
+We're likely to be using the Teensy 4.0 board for the ground station. Setup the environment according to the instructions here:
+https://www.pjrc.com/teensy/td_download.html
+
 ## Decode:
 Decode data packets streaming wirelessly into the ground station.
 
