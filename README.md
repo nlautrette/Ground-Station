@@ -1,7 +1,7 @@
 # Ground-Station
 ## Setup:
-We're using the Teensy 4.0 board. Setup the environment according to the instructions here:
-https://www.pjrc.com/teensy/td_download.html
+The ground station will likely be a laptop or a Raspberry pi, therefore most of this will be in python.
+
 
 ### Windows users:
 1. Make sure git is installed with symlink support
@@ -44,7 +44,7 @@ Data packets are of format **(NNxxxxx)**.
 
 NN is the integer ID of the sensor. Guaranteed to be 2 characters. For example, sensor ID 1 will be 0 padded to 01.
 
-xxxxx is the sensor reading, in arbitary units mapped to the sensor ID. Guaranteed to be 2 characters. For example, a reading of 1 will be 0 padded to 00001.
+xxxxx is the sensor reading, in arbitary units mapped to the sensor ID. Guaranteed to be 5 characters. For example, a reading of 1 will be 0 padded to 00001.
 
 '(' and ')' are determined packet start and termination packets.
 
