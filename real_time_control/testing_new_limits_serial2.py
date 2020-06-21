@@ -19,13 +19,13 @@ oldflags = fcntl.fcntl(fd, fcntl.F_GETFL)
 fcntl.fcntl(fd, fcntl.F_SETFL, oldflags | os.O_NONBLOCK)
 
 #ser = serial.Serial('/dev/tty/COM3')
-'''ser = serial.Serial('COM7', 9600)
-ser.flushInput()'''
+ser = serial.Serial('COM7', 9600)
+ser.flushInput()
 
-#for testing purposes
+'''#for testing purposes
 ser = serial.Serial("/dev/cu.usbmodem14101")
 ser.flushInput() 
-#######
+#######'''
 
 plot_window = 1000
 display = True
