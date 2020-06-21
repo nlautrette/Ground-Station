@@ -19,6 +19,8 @@ int numHighPressure = 0;
 void setup() {
   Serial.begin(9600);
 
+  while(!Serial.available());
+  
   Serial.println("How many low pressure sensors are connected?");
   while (!Serial.available());
   
