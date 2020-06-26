@@ -8,6 +8,10 @@
 #define HIGH_PRESSURE_1 A4
 #define HIGH_PRESSURE_2 A5
 
+
+void readData();
+void convertData();
+
 int input = 0;
 bool shouldPrint = false;
 
@@ -19,43 +23,49 @@ int numHighPressure = 0;
 void setup() {
   Serial.begin(9600);
 
-  while(!Serial.available());
+  //while(!Serial.available());
   
   Serial.println("How many low pressure sensors are connected?");
-  while (!Serial.available());
-  
-  numLowPressure = Serial.read() - 48;
+  while (Serial.available() == 0);
+  numLowPressure = Serial.parseInt();
+  //numLowPressure = Serial.read() - 48;
   
   Serial.println("How many high pressure sensors are connected?");
-  while (!Serial.available());
+  while (Serial.available() == 0);
 
-  numHighPressure = Serial.read() - 48;
-
-  if(numLowPressure >= 1){
-    pinMode(LOW_PRESSURE_1, INPUT);
-  }
-  if(numLowPressure >= 2){
-    pinMode(LOW_PRESSURE_2, INPUT);
-  }
-  if(numLowPressure >= 3){
-    pinMode(LOW_PRESSURE_3, INPUT);
-  }
-  if(numLowPressure >= 4){
-    pinMode(LOW_PRESSURE_4, INPUT);
-  }
-
-  if(numHighPressure >= 1){
-    pinMode(HIGH_PRESSURE_1, INPUT);
-  }
-  if(numHighPressure >= 2){
-    pinMode(HIGH_PRESSURE_2, INPUT);
-  }
+  numHighPressure = Serial.parseInt();
 
   Serial.print("There are ");
   Serial.print(numLowPressure);
   Serial.print(" low PTs and ");
   Serial.print(numHighPressure);
   Serial.println(" high PTs");
+
+  if(numLowPressure >= 1){
+    pinMode(LOW_PRESSURE_1, INPUT);
+    Serial.print("low1,");
+  }
+  if(numLowPressure >= 2){
+    pinMode(LOW_PRESSURE_2, INPUT);
+    Serial.print("low2,");
+  }
+  if(numLowPressure >= 3){
+    pinMode(LOW_PRESSURE_3, INPUT);
+    Serial.print("low3");
+  }
+  if(numLowPressure >= 4){
+    pinMode(LOW_PRESSURE_4, INPUT);
+    Serial.print("low4");
+  }
+
+  if(numHighPressure >= 1){
+    pinMode(HIGH_PRESSURE_1, INPUT);
+    Serial.print("high1");
+  }
+  if(numHighPressure >= 2){
+    pinMode(HIGH_PRESSURE_2, INPUT);
+    Serial.print("high2");
+  }
 }
 
 // 0.88V - 4.4V : ?? - 5000 PSI
