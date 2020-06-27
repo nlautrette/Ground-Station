@@ -71,9 +71,11 @@ sensors = numLowSensors + numHighSensors
 #sensors = int(input("How many sensors are connected?\n")) #set to how many sensors are connected
 print(ser.readline().decode("utf-8")) # There are x low PTs and x high PTs.
 headers = ser.read_until().decode("utf-8") # low1, low2, low3, high1.....
+headerList = headers.split(",")
 
 print("num sensors: {}".format(sensors))
-data = [[0]] * sensors
+data = [[] for i in range(sensors)]
+print(data)
 print("length of data: {}".format(len(data)))
 
 plt.ion()
@@ -84,18 +86,19 @@ plots = []
 
 for num in range(numLowSensors):
     print(num)
+    ax[0,num].set_title(headerList[num])
     plot, = ax[0,num].plot(data[num])
     plots.append(plot)
 
 for num in range(numHighSensors):
     print(num)
-    plot, = ax[0,num + numLowSensors].plot(data[num+numLowSensors])
+    ax[1,num + numLowSensors].set_title(headerList[num+numLowSensors])
+    plot, = ax[1,num + numLowSensors].plot(data[num+numLowSensors])
     plots.append(plot)
 
 with open(filename,"a") as f:
-    writer = csv.writer(f,delimiter=",")
     headers = "time," + headers
-    writer.writerow(headers.split(","))
+    f.write(headers+"\n")
 
 ser.write("0\r\n".encode('utf-8'))
 
@@ -112,32 +115,41 @@ while True:
         if values[0] == '':
             values[0] = str(last_first_value);
         if len(values) < sensors:
+            print("not enough data, continueing")
             continue
         last_values = values
-        values = [float(val.strip()) for val in values]
+        values = [val.strip() for val in values]
         last_first_value = values[0]
 
         print("values: {}".format(values))
         #print("did some processing")
 
         with open(filename,"a") as f:
-            writer = csv.writer(f,delimiter=",")
-            writer.writerow(np.array([time.time(),values]).flatten())
+            toWrite = str(time.time())+"," + ",".join(values)+"\n"
+            #print(toWrite)
+            f.write(toWrite)
+            #writer = csv.writer(f,delimiter=",")
+            #writer.writerow(np.array([time.time(),values]).flatten())
 
         for i in range(sensors):
+            #print("data: {}".format(data))
             #print("in sensor range {}".format(i))
-            data[i].append(values[i])
+            data[i].append(float(values[i]))
+            #print("data[{}]: {}".format(i, data[i]))
             plots[i].set_ydata(data[i])
             plots[i].set_xdata(range(len(data[i])))
         # x.set_xlim(0, len(y_var))
         if display:
+            #print("entered display")
             for num in range(numLowSensors):
+                #print("low sensor num: {}".format(num))
                 ax[0,num].relim()
                 ax[0,num].autoscale_view()
 
             for num in range(numHighSensors):
-                ax[0,num + numLowSensors].relim()
-                ax[0,num + numLowSensors].autoscale_view()
+                #print("high sensor num: {}".format(num))
+                ax[1,num + numLowSensors].relim()
+                ax[1,num + numLowSensors].autoscale_view()
 
             fig.canvas.draw()
             fig.canvas.flush_events()
