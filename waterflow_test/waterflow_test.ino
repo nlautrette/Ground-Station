@@ -51,21 +51,22 @@ void setup() {
   }
   if(numLowPressure >= 3){
     pinMode(LOW_PRESSURE_3, INPUT);
-    Serial.print("low3");
+    Serial.print("low3,");
   }
   if(numLowPressure >= 4){
     pinMode(LOW_PRESSURE_4, INPUT);
-    Serial.print("low4");
+    Serial.print("low4,");
   }
 
   if(numHighPressure >= 1){
     pinMode(HIGH_PRESSURE_1, INPUT);
-    Serial.print("high1");
+    Serial.print("high1,");
   }
   if(numHighPressure >= 2){
     pinMode(HIGH_PRESSURE_2, INPUT);
     Serial.print("high2");
   }
+  Serial.print("\n");
 }
 
 // 0.88V - 4.4V : ?? - 5000 PSI

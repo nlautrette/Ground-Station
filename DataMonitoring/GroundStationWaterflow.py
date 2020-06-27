@@ -8,11 +8,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 #import pandas as pd
-#import termios, fcntl, sys, os
+import termios, fcntl, sys, os
 fd = sys.stdin.fileno()
 
 
 print("Starting")
+
 # oldterm = termios.tcgetattr(fd)
 # newattr = termios.tcgetattr(fd)
 # newattr[3] = newattr[3] & ~termios.ICANON & ~termios.ECHO
@@ -20,11 +21,12 @@ print("Starting")
 #
 # oldflags = fcntl.fcntl(fd, fcntl.F_GETFL)
 # fcntl.fcntl(fd, fcntl.F_SETFL, oldflags | os.O_NONBLOCK)
+
 chosenCom = ""
 ports = list(serial.tools.list_ports.comports())
 for p in ports:
     print(p)
-    if "Arduino" in p.description:
+    if "Arduino" in p.description or "ACM" in p.description:
         chosenCom = p[0]
         print("Chosen COM: {}".format(p))
 print("Chosen COM {}".format(chosenCom))
@@ -40,100 +42,117 @@ ser.flushInput()
 plot_window = 1000
 display = True
 
-currLine = ser.readline().strip()
-while (currLine != "How many low pressure sensors are connected?"):
-    currLine = ser.readline().strip()
-numLowSensors = int(input(currLine))
 
-while (currLine != "How many high pressure sensors are connected?"):
-    currLine = ser.readline().strip()
-numHighSensors = int(input(currLine))
+filename = input("Which file should the data be written to?\n")
+
+currLine = str(ser.readline())
+while ("low pressure sensors" not in currLine):
+    time.sleep(500)
+    currLine = str(ser.readline())
+    print("looking for low pressure input")
+numLowSensors = int(input(currLine+"\n"))
+byteNum = (str(numLowSensors) + "\r\n").encode('utf-8')
+# print(byteNum)
+# print(int.from_bytes(byteNum, byteorder='big'))
+print("write low sensor nums: {}".format(ser.write(byteNum)))
+
+currLine = str(ser.readline())
+while ("high pressure sensors" not in currLine):
+    #time.sleep(500)
+    currLine = str(ser.readline())
+    print("looking for high pressure input")
+numHighSensors = int(input(currLine+"\n"))
+byteNum = (str(numHighSensors)+"\r\n").encode('utf-8')
+#print(byteNum)
+#print(int.from_bytes(byteNum, byteorder='big'))
+print("write high sensor nums: {}".format(ser.write(byteNum)))
 
 sensors = numLowSensors + numHighSensors
 #sensors = int(input("How many sensors are connected?\n")) #set to how many sensors are connected
-all_sensor_data = []
-print("Got input: {}, create empty data list.".format(sensors))
-for i in range(sensors):
-    all_sensor_data.append([]) #store y_first, y_second, etc. in 2D array
-print("create empty data lists;\n creating plots now")
-#plt.ion()
-fig, ax = plt.subplots(2,3)
+print(ser.readline().decode("utf-8")) # There are x low PTs and x high PTs.
+headers = ser.read_until().decode("utf-8") # low1, low2, low3, high1.....
 
-all_plots = []
-print("init plots")
+print("num sensors: {}".format(sensors))
+data = [[0]] * sensors
+print("length of data: {}".format(len(data)))
 
-if sensors >= 1:
-    plot1, = ax[0,0].plot(all_sensor_data[0])
-    all_plots.append(plot1)
-    print("setting up plot 1")
-if sensors >= 2:
-    plot2, = ax[0,1].plot(all_sensor_data[1])
-    all_plots.append(plot2)
-    print("setting up plot 2")
-if sensors >= 3:
-    plot3, = ax[0,2].plot(all_sensor_data[2])
-    all_plots.append(plot3)
-    print("setting up plot 3")
-if sensors >= 4:
-    plot4, = ax[1,0].plot(all_sensor_data[3])
-    all_plots.append(plot4)
-    print("setting up plot 4")
-if sensors >=5:
-    plot5, = ax[1,1].plot(all_sensor_data[4])
-    all_plots.append(plot5)
-if sensors >= 6:
-    plot6, = ax[1,2].plot(all_sensor_data[5])
-    all_plots.append(plot6)
+plt.ion()
+fig, ax = plt.subplots(2, max(numLowSensors, numHighSensors))
+plt.show()
+print(np.shape(ax))
+plots = []
+
+for num in range(numLowSensors):
+    print(num)
+    plot, = ax[0,num].plot(data[num])
+    plots.append(plot)
+
+for num in range(numHighSensors):
+    print(num)
+    plot, = ax[0,num + numLowSensors].plot(data[num+numLowSensors])
+    plots.append(plot)
+
+with open(filename,"a") as f:
+    writer = csv.writer(f,delimiter=",")
+    headers = "time," + headers
+    writer.writerow(headers.split(","))
+
+ser.write("0\r\n".encode('utf-8'))
 
 last_first_value = 0
 last_values = [0] * 5
 print("starting loop")
 while True:
+    #print("in loop")
     try:
-        line = ser.readline().strip()
-        print(line[2:len(line)])
-        values = line[2:len(line)].decode('ascii').split(',')
-        print(values)
+        #print("in try")
+        line = ser.readline().strip().decode('utf-8')
+        values = line.strip().split(',')
 
         if values[0] == '':
             values[0] = str(last_first_value);
         if len(values) < sensors:
-            values = last_values
+            continue
         last_values = values
-        values = [float(s) for s in values]
+        values = [float(val.strip()) for val in values]
         last_first_value = values[0]
 
-        with open("test_4_data.csv","a") as f:
+        print("values: {}".format(values))
+        #print("did some processing")
+
+        with open(filename,"a") as f:
             writer = csv.writer(f,delimiter=",")
-            writer.writerow([time.time(),values])
+            writer.writerow(np.array([time.time(),values]).flatten())
 
         for i in range(sensors):
-            all_sensor_data[i] = np.append(all_sensor_data[i],values[i])
-            all_plots[i].set_ydata(all_sensor_data[i])
-            all_plots[i].set_xdata(range(len(all_sensor_data[i])))
-
+            #print("in sensor range {}".format(i))
+            data[i].append(values[i])
+            plots[i].set_ydata(data[i])
+            plots[i].set_xdata(range(len(data[i])))
         # x.set_xlim(0, len(y_var))
         if display:
-            ax[0,0].relim()
-            ax[0,0].autoscale_view()
-            ax[0,1].relim()
-            ax[0,1].autoscale_view()
-            ax[0,2].relim()
-            ax[0,2].autoscale_view()
-            ax[1,0].relim()
-            ax[1,0].autoscale_view()
-            ax[1,1].relim()
-            ax[1,1].autoscale_view()
+            for num in range(numLowSensors):
+                ax[0,num].relim()
+                ax[0,num].autoscale_view()
+
+            for num in range(numHighSensors):
+                ax[0,num + numLowSensors].relim()
+                ax[0,num + numLowSensors].autoscale_view()
+
             fig.canvas.draw()
             fig.canvas.flush_events()
+            #plt.show()
 
-        c = sys.stdin.read(1)
-        if c:
-            display = not display
-        else:
-            continue
-    except:
-        print("Crash")
+        # c = sys.stdin.read(1)
+        # if c == '0':
+        #     display = not display
+        #     print("toggling display")
+        # elif c == 't':
+        #     display = True
+        # elif c == 'f':
+        #     display = False
+    except Exception as e:
+        print("Crash: {}".format(e))
         ser.close()
         break
 
