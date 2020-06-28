@@ -7,22 +7,26 @@ matplotlib.use("tkAgg")
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
+import select
+import threading 
 #import pandas as pd
-import termios, fcntl, sys, os
-fd = sys.stdin.fileno()
+#import termios, fcntl, sys, os
+#fd = sys.stdin.fileno()
+
+'''#UNBLOCKING INPUT
+oldterm = termios.tcgetattr(fd)
+newattr = termios.tcgetattr(fd)
+newattr[3] = newattr[3] & ~termios.ICANON & ~termios.ECHO
+termios.tcsetattr(fd, termios.TCSANOW, newattr)
+
+oldflags = fcntl.fcntl(fd, fcntl.F_GETFL)
+fcntl.fcntl(fd, fcntl.F_SETFL, oldflags | os.O_NONBLOCK)
+##############'''
 
 
 print("Starting")
 
-# oldterm = termios.tcgetattr(fd)
-# newattr = termios.tcgetattr(fd)
-# newattr[3] = newattr[3] & ~termios.ICANON & ~termios.ECHO
-# termios.tcsetattr(fd, termios.TCSANOW, newattr)
-#
-# oldflags = fcntl.fcntl(fd, fcntl.F_GETFL)
-# fcntl.fcntl(fd, fcntl.F_SETFL, oldflags | os.O_NONBLOCK)
-
-chosenCom = ""
+'''chosenCom = ""
 ports = list(serial.tools.list_ports.comports())
 for p in ports:
     print(p)
@@ -32,12 +36,12 @@ for p in ports:
 print("Chosen COM {}".format(chosenCom))
 #ser = serial.Serial('/dev/tty/COM3')
 ser = serial.Serial(chosenCom, 9600)
-ser.flushInput()
+ser.flushInput()'''
 
-'''#for testing purposes
+#for testing purposes
 ser = serial.Serial("/dev/cu.usbmodem14101")
 ser.flushInput()
-#######'''
+#######
 
 plot_window = 1000
 display = True
@@ -104,6 +108,10 @@ ser.write("0\r\n".encode('utf-8'))
 
 last_first_value = 0
 last_values = [0] * 5
+
+def process():
+    print("Do something")
+
 print("starting loop")
 while True:
     #print("in loop")
@@ -115,7 +123,7 @@ while True:
         if values[0] == '':
             values[0] = str(last_first_value);
         if len(values) < sensors:
-            print("not enough data, continueing")
+            print("not enough data, continuing")
             continue
         last_values = values
         values = [val.strip() for val in values]
@@ -155,14 +163,34 @@ while True:
             fig.canvas.flush_events()
             #plt.show()
 
-        # c = sys.stdin.read(1)
-        # if c == '0':
-        #     display = not display
-        #     print("toggling display")
-        # elif c == 't':
-        #     display = True
-        # elif c == 'f':
-        #     display = False
+        input = select.select([sys.stdin], [], [], 1)[0]
+        if input:
+            c = sys.stdin.readline().rstrip()
+
+            if (c == "q"):
+                print("Exiting")
+                sys.exit(0)
+            elif c == '0':
+                display = not display
+                print("toggling display")
+            elif c == 't':
+                display = True
+            elif c == 'f':
+                display = False
+            else:
+                print("You entered: %s" % value)
+        else:
+            continue
+
+        '''c = input("Enter one of the following characters (0, t, f): ")
+        if c == '0':
+            display = not display
+            print("toggling display")
+        elif c == 't':
+            display = True
+        elif c == 'f':
+            display = False'''
+
     except Exception as e:
         print("Crash: {}".format(e))
         ser.close()
