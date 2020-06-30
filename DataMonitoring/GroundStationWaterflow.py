@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 import select
-import threading 
+import threading
 #import pandas as pd
 #import termios, fcntl, sys, os
 #fd = sys.stdin.fileno()
@@ -23,10 +23,11 @@ oldflags = fcntl.fcntl(fd, fcntl.F_GETFL)
 fcntl.fcntl(fd, fcntl.F_SETFL, oldflags | os.O_NONBLOCK)
 ##############'''
 
+NUMDATAPOINTS = 400
 
 print("Starting")
 
-'''chosenCom = ""
+chosenCom = ""
 ports = list(serial.tools.list_ports.comports())
 for p in ports:
     print(p)
@@ -36,11 +37,11 @@ for p in ports:
 print("Chosen COM {}".format(chosenCom))
 #ser = serial.Serial('/dev/tty/COM3')
 ser = serial.Serial(chosenCom, 9600)
-ser.flushInput()'''
+ser.flushInput()
 
 #for testing purposes
-ser = serial.Serial("/dev/cu.usbmodem14101")
-ser.flushInput()
+#ser = serial.Serial("/dev/cu.usbmodem14101")
+#ser.flushInput()
 #######
 
 plot_window = 1000
@@ -81,12 +82,14 @@ print("num sensors: {}".format(sensors))
 data = [[] for i in range(sensors)]
 print(data)
 print("length of data: {}".format(len(data)))
+toDisplay = data
 
 plt.ion()
 fig, ax = plt.subplots(2, max(numLowSensors, numHighSensors))
 plt.show()
 print(np.shape(ax))
 plots = []
+
 
 for num in range(numLowSensors):
     print(num)
@@ -106,6 +109,15 @@ with open(filename,"a") as f:
 
 ser.write("0\r\n".encode('utf-8'))
 
+
+
+def getLatestSerialInput():
+    line = ser.readline()
+    while(ser.in_waiting > 0):
+        line = ser.readline()
+    return line.decode('utf-8').strip()
+
+
 last_first_value = 0
 last_values = [0] * 5
 
@@ -117,7 +129,7 @@ while True:
     #print("in loop")
     try:
         #print("in try")
-        line = ser.readline().strip().decode('utf-8')
+        line = getLatestSerialInput()
         values = line.strip().split(',')
 
         if values[0] == '':
@@ -143,9 +155,10 @@ while True:
             #print("data: {}".format(data))
             #print("in sensor range {}".format(i))
             data[i].append(float(values[i]))
+            toDisplay[i] = data[i][-NUMDATAPOINTS:]
             #print("data[{}]: {}".format(i, data[i]))
-            plots[i].set_ydata(data[i])
-            plots[i].set_xdata(range(len(data[i])))
+            plots[i].set_ydata(toDisplay[i])
+            plots[i].set_xdata(range(len(toDisplay[i])))
         # x.set_xlim(0, len(y_var))
         if display:
             #print("entered display")
@@ -163,39 +176,28 @@ while True:
             fig.canvas.flush_events()
             #plt.show()
 
-        input = select.select([sys.stdin], [], [], 1)[0]
-        if input:
-            c = sys.stdin.readline().rstrip()
-
-            if (c == "q"):
-                print("Exiting")
-                sys.exit(0)
-            elif c == '0':
-                display = not display
-                print("toggling display")
-            elif c == 't':
-                display = True
-            elif c == 'f':
-                display = False
-            else:
-                print("You entered: %s" % value)
-        else:
-            continue
-
-        '''c = input("Enter one of the following characters (0, t, f): ")
-        if c == '0':
-            display = not display
-            print("toggling display")
-        elif c == 't':
-            display = True
-        elif c == 'f':
-            display = False'''
+        # input = select.select([sys.stdin], [], [], 1)[0]
+        # if input:
+        #     c = sys.stdin.readline().rstrip()
+        #
+        #     if (c == "q"):
+        #         print("Exiting")
+        #         sys.exit(0)
+        #     elif c == '0':
+        #         display = not display
+        #         print("toggling display")
+        #     elif c == 't':
+        #         display = True
+        #     elif c == 'f':
+        #         display = False
+        #     else:
+        #         print("You entered: %s" % value)
+        # else:
+        #     continue
 
     except Exception as e:
         print("Crash: {}".format(e))
         ser.close()
         break
-
-
 
 ser.close()
