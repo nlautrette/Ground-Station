@@ -8,7 +8,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 import select
+<<<<<<< Updated upstream
 import threading 
+=======
+#import threading
+>>>>>>> Stashed changes
 #import pandas as pd
 #import termios, fcntl, sys, os
 #fd = sys.stdin.fileno()
@@ -30,7 +34,7 @@ print("Starting")
 ports = list(serial.tools.list_ports.comports())
 for p in ports:
     print(p)
-    if "Arduino" in p.description or "ACM" in p.description:
+    if "Arduino" in p.description or "ACM" in p.description or "cu.usbmodem" in p[0]:
         chosenCom = p[0]
         print("Chosen COM: {}".format(p))
 print("Chosen COM {}".format(chosenCom))
@@ -163,10 +167,19 @@ while True:
             fig.canvas.flush_events()
             #plt.show()
 
+<<<<<<< Updated upstream
         input = select.select([sys.stdin], [], [], 1)[0]
         if input:
             c = sys.stdin.readline().rstrip()
 
+=======
+        input = select.select([sys.stdin], [], [], 0.2)[0]
+        print(input)
+        if input:
+            print("inside if statement")
+            c = sys.stdin.readline().rstrip()
+        
+>>>>>>> Stashed changes
             if (c == "q"):
                 print("Exiting")
                 sys.exit(0)
@@ -181,6 +194,7 @@ while True:
                 print("You entered: %s" % value)
         else:
             continue
+<<<<<<< Updated upstream
 
         '''c = input("Enter one of the following characters (0, t, f): ")
         if c == '0':
@@ -190,6 +204,8 @@ while True:
             display = True
         elif c == 'f':
             display = False'''
+=======
+>>>>>>> Stashed changes
 
     except Exception as e:
         print("Crash: {}".format(e))
