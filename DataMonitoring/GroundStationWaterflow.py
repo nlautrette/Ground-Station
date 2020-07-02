@@ -8,11 +8,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 import select
-<<<<<<< Updated upstream
-import threading 
-=======
-#import threading
->>>>>>> Stashed changes
 #import pandas as pd
 #import termios, fcntl, sys, os
 #fd = sys.stdin.fileno()
@@ -30,7 +25,7 @@ fcntl.fcntl(fd, fcntl.F_SETFL, oldflags | os.O_NONBLOCK)
 
 print("Starting")
 
-'''chosenCom = ""
+chosenCom = ""
 ports = list(serial.tools.list_ports.comports())
 for p in ports:
     print(p)
@@ -40,12 +35,12 @@ for p in ports:
 print("Chosen COM {}".format(chosenCom))
 #ser = serial.Serial('/dev/tty/COM3')
 ser = serial.Serial(chosenCom, 9600)
-ser.flushInput()'''
-
-#for testing purposes
-ser = serial.Serial("/dev/cu.usbmodem14101")
 ser.flushInput()
-#######
+
+# #for testing purposes
+# ser = serial.Serial("/dev/cu.usbmodem14101")
+# ser.flushInput()
+# #######
 
 plot_window = 1000
 display = True
@@ -167,19 +162,10 @@ while True:
             fig.canvas.flush_events()
             #plt.show()
 
-<<<<<<< Updated upstream
-        input = select.select([sys.stdin], [], [], 1)[0]
-        if input:
-            c = sys.stdin.readline().rstrip()
-
-=======
         input = select.select([sys.stdin], [], [], 0.2)[0]
-        print(input)
         if input:
-            print("inside if statement")
+            #print("inside if statement")
             c = sys.stdin.readline().rstrip()
-        
->>>>>>> Stashed changes
             if (c == "q"):
                 print("Exiting")
                 sys.exit(0)
@@ -194,7 +180,6 @@ while True:
                 print("You entered: %s" % value)
         else:
             continue
-<<<<<<< Updated upstream
 
         '''c = input("Enter one of the following characters (0, t, f): ")
         if c == '0':
