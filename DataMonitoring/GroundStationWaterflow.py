@@ -22,6 +22,7 @@ oldflags = fcntl.fcntl(fd, fcntl.F_GETFL)
 fcntl.fcntl(fd, fcntl.F_SETFL, oldflags | os.O_NONBLOCK)
 ##############'''
 
+NUMDATAPOINTS = 400
 
 print("Starting")
 
@@ -80,12 +81,14 @@ print("num sensors: {}".format(sensors))
 data = [[] for i in range(sensors)]
 print(data)
 print("length of data: {}".format(len(data)))
+toDisplay = data
 
 plt.ion()
 fig, ax = plt.subplots(2, max(numLowSensors, numHighSensors))
 plt.show()
 print(np.shape(ax))
 plots = []
+
 
 for num in range(numLowSensors):
     print(num)
@@ -105,6 +108,15 @@ with open(filename,"a") as f:
 
 ser.write("0\r\n".encode('utf-8'))
 
+
+
+def getLatestSerialInput():
+    line = ser.readline()
+    while(ser.in_waiting > 0):
+        line = ser.readline()
+    return line.decode('utf-8').strip()
+
+
 last_first_value = 0
 last_values = [0] * 5
 
@@ -116,7 +128,7 @@ while True:
     #print("in loop")
     try:
         #print("in try")
-        line = ser.readline().strip().decode('utf-8')
+        line = getLatestSerialInput()
         values = line.strip().split(',')
 
         if values[0] == '':
@@ -142,9 +154,10 @@ while True:
             #print("data: {}".format(data))
             #print("in sensor range {}".format(i))
             data[i].append(float(values[i]))
+            toDisplay[i] = data[i][-NUMDATAPOINTS:]
             #print("data[{}]: {}".format(i, data[i]))
-            plots[i].set_ydata(data[i])
-            plots[i].set_xdata(range(len(data[i])))
+            plots[i].set_ydata(toDisplay[i])
+            plots[i].set_xdata(range(len(toDisplay[i])))
         # x.set_xlim(0, len(y_var))
         if display:
             #print("entered display")
@@ -181,20 +194,9 @@ while True:
         else:
             continue
 
-        '''c = input("Enter one of the following characters (0, t, f): ")
-        if c == '0':
-            display = not display
-            print("toggling display")
-        elif c == 't':
-            display = True
-        elif c == 'f':
-            display = False'''
-
     except Exception as e:
         print("Crash: {}".format(e))
         ser.close()
         break
-
-
 
 ser.close()
