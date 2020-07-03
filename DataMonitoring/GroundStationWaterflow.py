@@ -12,16 +12,6 @@ import select
 #import termios, fcntl, sys, os
 #fd = sys.stdin.fileno()
 
-'''#UNBLOCKING INPUT
-oldterm = termios.tcgetattr(fd)
-newattr = termios.tcgetattr(fd)
-newattr[3] = newattr[3] & ~termios.ICANON & ~termios.ECHO
-termios.tcsetattr(fd, termios.TCSANOW, newattr)
-
-oldflags = fcntl.fcntl(fd, fcntl.F_GETFL)
-fcntl.fcntl(fd, fcntl.F_SETFL, oldflags | os.O_NONBLOCK)
-##############'''
-
 NUMDATAPOINTS = 400
 
 print("Starting")
@@ -76,11 +66,12 @@ sensors = numLowSensors + numHighSensors
 print(ser.readline().decode("utf-8")) # There are x low PTs and x high PTs.
 headers = ser.read_until().decode("utf-8") # low1, low2, low3, high1.....
 headerList = headers.split(",")
+print(headerList)
 
 print("num sensors: {}".format(sensors))
 data = [[] for i in range(sensors)]
-print(data)
-print("length of data: {}".format(len(data)))
+#print(data)
+#print("length of data: {}".format(len(data)))
 toDisplay = data
 
 plt.ion()
@@ -91,15 +82,15 @@ plots = []
 
 
 for num in range(numLowSensors):
-    print(num)
+    #print(num)
     ax[0,num].set_title(headerList[num])
     plot, = ax[0,num].plot(data[num])
     plots.append(plot)
 
 for num in range(numHighSensors):
     print(num)
-    ax[1,num + numLowSensors].set_title(headerList[num+numLowSensors])
-    plot, = ax[1,num + numLowSensors].plot(data[num+numLowSensors])
+    ax[1,num].set_title(headerList[num+numLowSensors])
+    plot, = ax[1,num].plot(data[num+numLowSensors])
     plots.append(plot)
 
 with open(filename,"a") as f:
@@ -168,8 +159,8 @@ while True:
 
             for num in range(numHighSensors):
                 #print("high sensor num: {}".format(num))
-                ax[1,num + numLowSensors].relim()
-                ax[1,num + numLowSensors].autoscale_view()
+                ax[1,num].relim()
+                ax[1,num].autoscale_view()
 
             fig.canvas.draw()
             fig.canvas.flush_events()
