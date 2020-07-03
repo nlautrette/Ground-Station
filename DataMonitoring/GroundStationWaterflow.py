@@ -162,7 +162,7 @@ while True:
             fig.canvas.flush_events()
             #plt.show()
 
-        input = select.select([sys.stdin], [], [], 0.2)[0]
+        input = select.select([sys.stdin], [], [], 0.1)[0]
         if input:
             #print("inside if statement")
             c = sys.stdin.readline().rstrip()
@@ -189,8 +189,6 @@ while True:
             display = True
         elif c == 'f':
             display = False'''
-=======
->>>>>>> Stashed changes
 
     except Exception as e:
         print("Crash: {}".format(e))
