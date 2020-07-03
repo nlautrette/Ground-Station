@@ -64,7 +64,7 @@ void setup() {
   }
   if(numHighPressure >= 2){
     pinMode(HIGH_PRESSURE_2, INPUT);
-    Serial.print("high2");
+    Serial.print("high2,");
   }
   Serial.print("\n");
 }
