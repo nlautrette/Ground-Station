@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 import select
-import threading
 #import pandas as pd
 #import termios, fcntl, sys, os
 #fd = sys.stdin.fileno()
@@ -31,7 +30,7 @@ chosenCom = ""
 ports = list(serial.tools.list_ports.comports())
 for p in ports:
     print(p)
-    if "Arduino" in p.description or "ACM" in p.description:
+    if "Arduino" in p.description or "ACM" in p.description or "cu.usbmodem" in p[0]:
         chosenCom = p[0]
         print("Chosen COM: {}".format(p))
 print("Chosen COM {}".format(chosenCom))
@@ -39,10 +38,10 @@ print("Chosen COM {}".format(chosenCom))
 ser = serial.Serial(chosenCom, 9600)
 ser.flushInput()
 
-#for testing purposes
-#ser = serial.Serial("/dev/cu.usbmodem14101")
-#ser.flushInput()
-#######
+# #for testing purposes
+# ser = serial.Serial("/dev/cu.usbmodem14101")
+# ser.flushInput()
+# #######
 
 plot_window = 1000
 display = True
@@ -176,24 +175,24 @@ while True:
             fig.canvas.flush_events()
             #plt.show()
 
-        # input = select.select([sys.stdin], [], [], 1)[0]
-        # if input:
-        #     c = sys.stdin.readline().rstrip()
-        #
-        #     if (c == "q"):
-        #         print("Exiting")
-        #         sys.exit(0)
-        #     elif c == '0':
-        #         display = not display
-        #         print("toggling display")
-        #     elif c == 't':
-        #         display = True
-        #     elif c == 'f':
-        #         display = False
-        #     else:
-        #         print("You entered: %s" % value)
-        # else:
-        #     continue
+        input = select.select([sys.stdin], [], [], 0.1)[0]
+        if input:
+            #print("inside if statement")
+            c = sys.stdin.readline().rstrip()
+            if (c == "q"):
+                print("Exiting")
+                sys.exit(0)
+            elif c == '0':
+                display = not display
+                print("toggling display")
+            elif c == 't':
+                display = True
+            elif c == 'f':
+                display = False
+            else:
+                print("You entered: %s" % value)
+        else:
+            continue
 
     except Exception as e:
         print("Crash: {}".format(e))
