@@ -162,7 +162,7 @@ while True:
                 display = True
             elif c == 'f':
                 display = False
-            elif c == '4':
+            elif c == 'd':
                 display_all = not display_all
                 print("toggle display all data")
             elif c == "c":
