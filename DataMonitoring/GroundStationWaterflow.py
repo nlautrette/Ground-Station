@@ -9,8 +9,6 @@ import numpy as np
 import sys
 import select
 #import pandas as pd
-#import termios, fcntl, sys, os
-#fd = sys.stdin.fileno()
 
 NUMDATAPOINTS = 400
 
@@ -35,6 +33,7 @@ ser.flushInput()
 
 plot_window = 1000
 display = True
+display_all = False
 
 
 filename = input("Which file should the data be written to?\n")
@@ -46,8 +45,6 @@ while ("low pressure sensors" not in currLine):
     print("looking for low pressure input")
 numLowSensors = int(input(currLine+"\n"))
 byteNum = (str(numLowSensors) + "\r\n").encode('utf-8')
-# print(byteNum)
-# print(int.from_bytes(byteNum, byteorder='big'))
 print("write low sensor nums: {}".format(ser.write(byteNum)))
 
 currLine = str(ser.readline())
@@ -57,8 +54,6 @@ while ("high pressure sensors" not in currLine):
     print("looking for high pressure input")
 numHighSensors = int(input(currLine+"\n"))
 byteNum = (str(numHighSensors)+"\r\n").encode('utf-8')
-#print(byteNum)
-#print(int.from_bytes(byteNum, byteorder='big'))
 print("write high sensor nums: {}".format(ser.write(byteNum)))
 
 sensors = numLowSensors + numHighSensors
@@ -70,9 +65,7 @@ print(headerList)
 
 print("num sensors: {}".format(sensors))
 data = [[] for i in range(sensors)]
-#print(data)
-#print("length of data: {}".format(len(data)))
-toDisplay = data
+toDisplay = [[] for i in range(sensors)]
 
 plt.ion()
 fig, ax = plt.subplots(2, max(numLowSensors, numHighSensors))
@@ -82,13 +75,11 @@ plots = []
 
 
 for num in range(numLowSensors):
-    #print(num)
     ax[0,num].set_title(headerList[num])
     plot, = ax[0,num].plot(data[num])
     plots.append(plot)
 
 for num in range(numHighSensors):
-    print(num)
     ax[1,num].set_title(headerList[num+numLowSensors])
     plot, = ax[1,num].plot(data[num+numLowSensors])
     plots.append(plot)
@@ -98,7 +89,6 @@ with open(filename,"a") as f:
     f.write(headers+"\n")
 
 ser.write("0\r\n".encode('utf-8'))
-
 
 
 def getLatestSerialInput():
@@ -111,14 +101,9 @@ def getLatestSerialInput():
 last_first_value = 0
 last_values = [0] * 5
 
-def process():
-    print("Do something")
-
 print("starting loop")
 while True:
-    #print("in loop")
     try:
-        #print("in try")
         line = getLatestSerialInput()
         values = line.strip().split(',')
 
@@ -132,43 +117,40 @@ while True:
         last_first_value = values[0]
 
         print("values: {}".format(values))
-        #print("did some processing")
 
         with open(filename,"a") as f:
             toWrite = str(time.time())+"," + ",".join(values)+"\n"
-            #print(toWrite)
             f.write(toWrite)
             #writer = csv.writer(f,delimiter=",")
             #writer.writerow(np.array([time.time(),values]).flatten())
 
         for i in range(sensors):
-            #print("data: {}".format(data))
-            #print("in sensor range {}".format(i))
             data[i].append(float(values[i]))
+            print(len(data[i]))
             toDisplay[i] = data[i][-NUMDATAPOINTS:]
-            #print("data[{}]: {}".format(i, data[i]))
-            plots[i].set_ydata(toDisplay[i])
-            plots[i].set_xdata(range(len(toDisplay[i])))
-        # x.set_xlim(0, len(y_var))
+            print(len(toDisplay[i]))
+
+            if display_all:
+                plots[i].set_ydata(data[i])
+                plots[i].set_xdata(range(len(data[i])))
+            else:
+                plots[i].set_ydata(toDisplay[i])
+                plots[i].set_xdata(range(len(toDisplay[i])))
+
         if display:
-            #print("entered display")
             for num in range(numLowSensors):
-                #print("low sensor num: {}".format(num))
                 ax[0,num].relim()
                 ax[0,num].autoscale_view()
 
             for num in range(numHighSensors):
-                #print("high sensor num: {}".format(num))
                 ax[1,num].relim()
                 ax[1,num].autoscale_view()
 
             fig.canvas.draw()
             fig.canvas.flush_events()
-            #plt.show()
 
         input = select.select([sys.stdin], [], [], 0.1)[0]
         if input:
-            #print("inside if statement")
             c = sys.stdin.readline().rstrip()
             if (c == "q"):
                 print("Exiting")
@@ -180,8 +162,14 @@ while True:
                 display = True
             elif c == 'f':
                 display = False
+            elif c == 'd':
+                display_all = not display_all
+                print("toggle display all data")
+            elif c == "c":
+                data = [[] for i in range(sensors)]
+                toDisplay = [[] for i in range(sensors)]
             else:
-                print("You entered: %s" % value)
+                print("You entered: %s" % c)
         else:
             continue
 
