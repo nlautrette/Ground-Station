@@ -69,10 +69,11 @@ toDisplay = [[] for i in range(sensors)]
 
 plt.ion()
 fig, ax = plt.subplots(2, max(numLowSensors, numHighSensors))
+if max(numLowSensors, numHighSensors) == 1:
+    ax = np.reshape(ax, (-1, 1))
 plt.show()
 print(np.shape(ax))
 plots = []
-
 
 for num in range(numLowSensors):
     ax[0, num].set_title(headerList[num])
