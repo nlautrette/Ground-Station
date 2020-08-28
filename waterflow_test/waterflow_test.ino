@@ -209,5 +209,5 @@ float lowPressureConversion(int raw){
 }
 
 float highPressureConversion(int raw){
-  return (6.612739309669555*(raw - 0.88 / 4.4 * 1024)); //- 1237.7612969223858);
+  return (6.612739309669555*(raw) - 1237); //0.88 / 4.4 * 1024)); //- 1237.7612969223858);
 }
