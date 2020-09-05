@@ -17,10 +17,13 @@ print("Starting")
 chosenCom = ""
 ports = list(serial.tools.list_ports.comports())
 for p in ports:
-    print(p)
-    if "Arduino" in p.description or "ACM" in p.description or "cu.usbmodem" in p[0]:
+    # print(p)
+    # print(p.description)
+    # print(p[0])
+    # print(p.name)
+    if "Arduino" in p.description or "ACM" in p.description or "ACM" in p.name or "cu.usbmodem" in p[0]:
         chosenCom = p[0]
-        print("Chosen COM: {}".format(p))
+        #print("Chosen COM: {}".format(p))
 print("Chosen COM {}".format(chosenCom))
 #ser = serial.Serial('/dev/tty/COM3')
 ser = serial.Serial(chosenCom, 9600)
@@ -37,6 +40,9 @@ display_all = False
 
 
 filename = input("Which file should the data be written to?\n")
+
+ser.write(0)
+print("wrote 0")
 
 currLine = str(ser.readline())
 while ("low pressure sensors" not in currLine):
@@ -106,6 +112,9 @@ print("starting loop")
 while True:
     try:
         line = getLatestSerialInput()
+
+        # process
+
         values = line.strip().split(',')
 
         if values[0] == '':
