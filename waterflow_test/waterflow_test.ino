@@ -9,6 +9,8 @@
 #define HIGH_PRESSURE_2 A5
 
 
+//#define RFSerial Serial1
+
 void readData();
 void convertData();
 
@@ -21,17 +23,33 @@ int numLowPressure = 0;
 int numHighPressure = 0;
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(57600);
+  //Setup and start RF communication
+//  RFSerial.begin(57600);
 
   //while(!Serial.available());
   
-  Serial.println("How many low pressure sensors are connected?");
-  while (Serial.available() == 0);
+Serial.println("How many low pressure sensors are connected?");
+  while (Serial.available() == 0) {
+    
+      delay(50);
+      if (millis() - currTime > 2000) {
+        Serial.println("waiting for low pt #...");
+        currTime = millis();
+      }
+    }
   numLowPressure = Serial.parseInt();
-  //numLowPressure = Serial.read() - 48;
   
-  Serial.println("How many high pressure sensors are connected?");
-  while (Serial.available() == 0);
+//  numLowPressure = Serial.read() - 48;
+  
+Serial.println("How many high pressure sensors are connected?");
+  while (Serial.available() == 0) {
+      delay(50);
+      if (millis() - currTime > 2000) {
+        Serial.println("waiting for high pt #...");
+        currTime = millis();
+      }
+    }
 
   numHighPressure = Serial.parseInt();
 
@@ -78,16 +96,17 @@ int periodic = 100; // take data 10 times a second.
 void loop() {
   currTime = millis();
   if((currTime%int(periodic)) == 0) {
-    if (Serial.available() > 0) {
-      int readByte = Serial.read();
-      if(readByte == 't'){
-        shouldPrint = true;
-      } else if(readByte == 'f'){
-        shouldPrint = false;
-      } else if(readByte == '0'){
-        shouldPrint = !shouldPrint;
-      }
-    }
+//    if (Serial.available() > 0) {
+//      int readByte = Serial.read();
+//      if(readByte == 't'){
+//        shouldPrint = true;
+//      } else if(readByte == 'f'){
+//        shouldPrint = false;
+//      } else if(readByte == '0'){
+//        shouldPrint = !shouldPrint;
+//      }
+//    }
+  shouldPrint = true;
   
     readData();
   
