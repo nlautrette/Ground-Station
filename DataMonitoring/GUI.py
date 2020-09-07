@@ -74,6 +74,7 @@ class Status(QWidget):
 
         self.setMaximumHeight(60)
         self.setMinimumWidth(90)
+        self.setMaximumWidth(90)
 
     def switch(self):
         if self.color == 'red':
@@ -112,7 +113,9 @@ class MainWindow(QMainWindow):
 
         mainlayout.addWidget(title,0,0,1,2)
 
-        # Valves
+        # ---------- Valves -----------------------------------------
+
+        # Dynamically create StatusGroup objects and formatted labels for all valves
 
         valves = ["Pressurant", "LOX GEMS", "Propane GEMS", "LOX 2-WAY",
         "Propane 2-WAY", "LOX 5-WAY", "Propane 5-WAY"]
@@ -120,26 +123,41 @@ class MainWindow(QMainWindow):
         for i,name in enumerate(valves):
             StatusGroups[name] = StatusGroup(name)
 
+        label_names = ['Pressurant', 'LOX', 'Propane', 'GEMS', '2-WAY', '5-WAY']
+        valve_labels = {}
+        for i,name in enumerate(label_names):
+            label = QLabel(name)
+            font = QFont("Lucida Grande",14, QFont.Bold)
+            label.setFont(font)
+            valve_labels[name] = label
+
+        # Put StatusGroup objects and labels in valve GridLayout, as outlined in rough draft diagram
+
         valve_container = QWidget()
         valve_layout = QGridLayout()
-        valve_layout.addWidget(QLabel("Pressurant"),0,1)
-        valve_layout.addWidget(StatusGroups['Pressurant'],1,1)
-        valve_layout.addWidget(QLabel("LOX"),2,1)
-        valve_layout.addWidget(QLabel("Propane"),2,2)
-        valve_layout.addWidget(QLabel("GEMS"),3,0)
+        # row 0 & 1
+        valve_layout.addWidget(valve_labels["Pressurant"],0,1,1,2,Qt.AlignCenter)
+        valve_layout.addWidget(StatusGroups['Pressurant'],1,1,1,2,Qt.AlignCenter)
+        # row 2
+        valve_layout.addWidget(valve_labels["LOX"],2,1,Qt.AlignCenter)
+        valve_layout.addWidget(valve_labels["Propane"],2,2,Qt.AlignCenter)
+        # row 3
+        valve_layout.addWidget(valve_labels["GEMS"],3,0)
         valve_layout.addWidget(StatusGroups['LOX GEMS'],3,1)
         valve_layout.addWidget(StatusGroups['Propane GEMS'],3,2)
-        valve_layout.addWidget(QLabel("2-WAY"),4,0)
+        # row 4
+        valve_layout.addWidget(valve_labels["2-WAY"],4,0)
         valve_layout.addWidget(StatusGroups['LOX 2-WAY'],4,1)
         valve_layout.addWidget(StatusGroups['Propane 2-WAY'],4,2)
-        valve_layout.addWidget(QLabel("5-WAY"),5,0)
+        # row 5
+        valve_layout.addWidget(valve_labels["5-WAY"],5,0)
         valve_layout.addWidget(StatusGroups['LOX 5-WAY'],5,1)
         valve_layout.addWidget(StatusGroups['Propane 5-WAY'],5,2)
 
         valve_container.setLayout(valve_layout)
         mainlayout.addWidget(valve_container,1,0)
 
-        # Graphs
+        # ---------- Graphs -----------------------------------------
 
         # Create the maptlotlib FigureCanvas object,
         # which defines a single set of axes as self.axes.
@@ -147,6 +165,8 @@ class MainWindow(QMainWindow):
         sc.axes.plot([0,1,2,3,4], [10,1,20,3,40])
 
         mainlayout.addWidget(sc,1,1,1,1)
+
+        # ---------- Display ----------------------------------------
 
         # Add layout to a dummy QWidget, and set it as the Central Widget
         widget = QWidget()
