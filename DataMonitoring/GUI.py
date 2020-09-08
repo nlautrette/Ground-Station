@@ -245,29 +245,42 @@ class Entry(QMainWindow):
         self.update_full_file_path()
 
 
-        self.pushButton = QPushButton("Launch Dashboard")
-        mainlayout.addWidget(self.pushButton,len(label_names) + 1,0,1,2,Qt.AlignCenter)
+        self.launchButton = QPushButton("Launch Dashboard")
+        mainlayout.addWidget(self.launchButton,len(label_names) + 1,0,1,2,Qt.AlignCenter)
+        self.launchButton.clicked.connect(self.on_launchButton_clicked)
 
         # Dummy container widget
         widget = QWidget()
         widget.setLayout(mainlayout)
         self.setCentralWidget(widget)
 
-        self.pushButton.clicked.connect(self.on_pushButton_clicked)
-
-    def on_pushButton_clicked(self):
-        self.mainWindow = MainWindow()
-        self.mainWindow.show()
-        self.hide()
 
     def update_full_file_path(self):
-        filename = self.full_file_name(self.line_edits['base_file'].text())
-        filepath = self.line_edits['folder'].text()
-        self.labels['file_path_text'].setText(os.path.join(filepath,filename))
+        self.file_name = self.full_file_name(self.line_edits['base_file'].text())
+        self.folder_name = self.line_edits['folder'].text()
+        self.labels['file_path_text'].setText(os.path.join(self.folder_name,self.file_name))
 
     '''Given a base file name BASE, will return the correct full name "BASE_MM-DD-YY_#{i}"'''
     def full_file_name(self, base):
         return "{}_{}.csv".format(base,datetime.now().strftime('%m-%d-%y_%H:%M'))
+
+    def on_launchButton_clicked(self):
+        if not os.path.isdir(self.folder_name):
+            message = '''<p>The given folder to save data in does not exist:</p>    {}
+                    <p>Would you like to create the a new folder with the given name?</p>'''.format(folder_name)
+            msgBox = QMessageBox(QMessageBox.Warning,
+                    "QMessageBox.warning()", message,
+                    QMessageBox.NoButton, self)
+            msgBox.addButton("Create", QMessageBox.AcceptRole)
+            msgBox.addButton("Cancel", QMessageBox.RejectRole)
+            if msgBox.exec_() == QMessageBox.AcceptRole:
+                os.mkdir(self.folder_name)
+            else:
+                return
+
+        self.mainWindow = MainWindow()
+        self.mainWindow.show()
+        self.hide()
 
 
 def main():
