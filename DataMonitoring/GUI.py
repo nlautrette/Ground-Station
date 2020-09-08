@@ -1,4 +1,3 @@
-import sys
 import matplotlib
 matplotlib.use('Qt5Agg')
 
@@ -9,6 +8,8 @@ from PyQt5.QtCore import *
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 
+import random, time, sys, os
+from datetime import datetime
 
 class MplCanvas(FigureCanvasQTAgg):
 
@@ -107,7 +108,7 @@ class MainWindow(QMainWindow):
 
         # row 0
 
-        title = QLabel("Waterflow Dashboard")
+        title = QLabel("Ground Dashboard")
         titlefont = QFont("Lucida Grande",20, QFont.Bold)
         title.setFont(titlefont)
 
@@ -161,10 +162,23 @@ class MainWindow(QMainWindow):
 
         # Create the maptlotlib FigureCanvas object,
         # which defines a single set of axes as self.axes.
-        sc = MplCanvas(self, width=5, height=4, dpi=100)
-        sc.axes.plot([0,1,2,3,4], [10,1,20,3,40])
+        self.canvas = MplCanvas(self, width=5, height=4, dpi=100)
+        # sc.axes.plot([0,1,2,3,4], [10,1,20,3,40])
+        mainlayout.addWidget(self.canvas,1,1,1,1)
 
-        mainlayout.addWidget(sc,1,1,1,1)
+        n_data = 50
+        self.xdata = list(range(n_data))
+        self.ydata = [random.randint(0, 10) for i in range(n_data)]
+
+        self._plot_ref = None
+        self.update_plot()
+
+        self.timer = QTimer()
+        self.timer.setInterval(30)
+        self.timer.timeout.connect(self.update_plot)
+        self.timer.start()
+
+
 
         # ---------- Display ----------------------------------------
 
@@ -174,17 +188,93 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(widget)
 
-        self.show()
 
-    def act1(self):
-        print("Action 1")
+    def update_plot(self):
+        self.ydata = self.ydata[1:] + [random.randint(0, 10)]
 
-    def act2(self):
-        print("Action 2")
+        if self._plot_ref is None:
+            plot_refs = self.canvas.axes.plot(self.xdata, self.ydata, 'b')
+            self._plot_ref = plot_refs[0]
+        else:
+            self._plot_ref.set_ydata(self.ydata)
 
-    def act3(self):
-        print("Action 3")
+        self.canvas.draw()
 
-app = QApplication(sys.argv)
-w = MainWindow()
-app.exec_()
+
+class Entry(QMainWindow):
+    def __init__(self, parent=None):
+        super(Entry, self).__init__(parent)
+
+        mainlayout = QGridLayout()
+
+        # row 0
+
+        title = QLabel("Dashboard Settings")
+        title.setFont(QFont("Lucida Grande",20, QFont.Bold))
+
+        mainlayout.addWidget(title,0,0,1,2)
+
+        self.storage_path = 'data'
+
+        label_names = ['Base Filename:', 'Folder:', 'File Path:','# Low PTs:', '# High PTs:']
+        label_ids = ['base_file', 'folder', 'file_path', 'low_pt', 'high_pt']
+        self.labels = {}
+        line_edit_defaults = ['waterflow', self.storage_path, '', '0', '0']
+        self.line_edits = {}
+        label_font = QFont("Lucida Grande",14, QFont.Bold)
+        for i,name in enumerate(label_names):
+            label = QLabel(name)
+            label.setFont(label_font)
+            self.labels[label_ids[i]] = label
+            mainlayout.addWidget(label,i+1,0)
+            # create a QLineEdit for all rows except 'File Path'
+            if name !='File Path:':
+                line_edit = QLineEdit()
+                line_edit.setText(line_edit_defaults[i])
+                self.line_edits[label_ids[i]] = line_edit
+            else:
+                line_edit = QLabel('')
+                self.labels['file_path_text'] = line_edit
+            mainlayout.addWidget(line_edit,i+1,1)
+
+        # Set various object settings
+        self.line_edits['low_pt'].setValidator(QIntValidator(0,5))
+        self.line_edits['high_pt'].setValidator(QIntValidator(0,2))
+        self.line_edits['base_file'].textChanged.connect(self.update_full_file_path)
+        self.line_edits['folder'].textChanged.connect(self.update_full_file_path)
+        self.update_full_file_path()
+
+
+        self.pushButton = QPushButton("Launch Dashboard")
+        mainlayout.addWidget(self.pushButton,len(label_names) + 1,0,1,2,Qt.AlignCenter)
+
+        # Dummy container widget
+        widget = QWidget()
+        widget.setLayout(mainlayout)
+        self.setCentralWidget(widget)
+
+        self.pushButton.clicked.connect(self.on_pushButton_clicked)
+
+    def on_pushButton_clicked(self):
+        self.mainWindow = MainWindow()
+        self.mainWindow.show()
+        self.hide()
+
+    def update_full_file_path(self):
+        filename = self.full_file_name(self.line_edits['base_file'].text())
+        filepath = self.line_edits['folder'].text()
+        self.labels['file_path_text'].setText(os.path.join(filepath,filename))
+
+    '''Given a base file name BASE, will return the correct full name "BASE_MM-DD-YY_#{i}"'''
+    def full_file_name(self, base):
+        return "{}_{}.csv".format(base,datetime.now().strftime('%m-%d-%y_%H:%M'))
+
+
+def main():
+    app = QApplication(sys.argv)
+    w = Entry()
+    w.show()
+    app.exec_()
+
+if __name__ == '__main__':
+    main()
