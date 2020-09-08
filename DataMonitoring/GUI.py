@@ -11,6 +11,9 @@ from matplotlib.figure import Figure
 import random, time, sys, os
 from datetime import datetime
 
+# Contains Thread Definitions
+from GUI_threads import *
+
 class MplCanvas(FigureCanvasQTAgg):
 
     def __init__(self, parent=None, width=5, height=4, dpi=100):
@@ -166,18 +169,27 @@ class MainWindow(QMainWindow):
         # sc.axes.plot([0,1,2,3,4], [10,1,20,3,40])
         mainlayout.addWidget(self.canvas,1,1,1,1)
 
-        n_data = 50
-        self.xdata = list(range(n_data))
-        self.ydata = [random.randint(0, 10) for i in range(n_data)]
+        # n_data = 50
+        # self.xdata = list(range(n_data))
+        # self.ydata = [random.randint(0, 10) for i in range(n_data)]
+        #
+        # self._plot_ref = None
+        # self.update_plot()
 
-        self._plot_ref = None
-        self.update_plot()
+        # Timer for initial testing with random noise
+        # self.timer = QTimer()
+        # self.timer.setInterval(30)
+        # self.timer.timeout.connect(self.update_plot)
+        # self.timer.start()
 
-        self.timer = QTimer()
-        self.timer.setInterval(30)
-        self.timer.timeout.connect(self.update_plot)
-        self.timer.start()
+        # Creates a threadpool to handle scheduled threads
+        self.threadpool = QThreadPool()
 
+        # Sets `update_plot` to be called every time serialThread sends a
+        # 'data' signal
+        self.serialThread = SerialThread(self.canvas)
+        self.serialThread.signals.data.connect(self.beans)
+        self.threadpool.start(self.serialThread)
 
 
         # ---------- Display ----------------------------------------
@@ -189,8 +201,11 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(widget)
 
 
-    def update_plot(self):
-        self.ydata = self.ydata[1:] + [random.randint(0, 10)]
+    def update_plot(self, data=None):
+        if data is None:
+            self.ydata = self.ydata[1:] + [random.randint(0, 10)]
+        else:
+            self.ydata = self.ydata[1:] + [data]
 
         if self._plot_ref is None:
             plot_refs = self.canvas.axes.plot(self.xdata, self.ydata, 'b')
@@ -199,6 +214,16 @@ class MainWindow(QMainWindow):
             self._plot_ref.set_ydata(self.ydata)
 
         self.canvas.draw()
+
+    def beans(self, num):
+        print("{} beans".format(num))
+
+    # Override close event to stop threads
+    def closeEvent(self, event):
+        print("Shutting down threads")
+        SerialThread.stop_thread()
+        time.sleep(0.2)
+        event.accept()
 
 
 class Entry(QMainWindow):
