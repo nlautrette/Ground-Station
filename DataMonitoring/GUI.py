@@ -201,6 +201,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(widget)
 
 
+    '''Old method from when graph was in main object, not in separate thread'''
     def update_plot(self, data=None):
         if data is None:
             self.ydata = self.ydata[1:] + [random.randint(0, 10)]
@@ -221,7 +222,7 @@ class MainWindow(QMainWindow):
     # Override close event to stop threads
     def closeEvent(self, event):
         print("Shutting down threads")
-        SerialThread.stop_thread()
+        self.serialThread.stop_thread()
         time.sleep(0.2)
         event.accept()
 

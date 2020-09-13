@@ -24,6 +24,7 @@ class SerialThread(QRunnable):
     def __init__(self, canvas):
         super(SerialThread, self).__init__()
         self.signals = SerialSignals()
+        self.name = "Serial Thread"
 
         # ---------- Display Config ---------------------------------
 
@@ -41,6 +42,7 @@ class SerialThread(QRunnable):
 
         self.numLowPressure = 1
         self.numHighPressure = 0
+        self.ser = None
 
 
     @pyqtSlot()
@@ -56,6 +58,7 @@ class SerialThread(QRunnable):
 
 
         NUMDATAPOINTS = 400
+        fail_num = 15
 
         print("Starting")
 
@@ -66,10 +69,18 @@ class SerialThread(QRunnable):
             if "Arduino" in p.description or "ACM" in p.description or "cu.usbmodem" in p[0]:
                 chosenCom = p[0]
                 print("Chosen COM: {}".format(p))
+        if not chosenCom:
+            self.stop_thread("No Valid Com Found")
+            return
         print("Chosen COM {}".format(chosenCom))
         baudrate = 9600
         print("Baud Rate {}".format(baudrate))
-        ser = serial.Serial(chosenCom, baudrate)
+        try:
+            ser = serial.Serial(chosenCom, baudrate,timeout=3)
+            self.ser = ser
+        except Exception as e:
+            self.stop_thread("Invalid Serial Connection")
+            return
         ser.flushInput()
 
         display = True
@@ -84,14 +95,21 @@ class SerialThread(QRunnable):
         # print("Writing data to: {}".format(filename))
 
 
+        fails = 0
         currLine = str(ser.readline())
         start = time.time()
         while ("low pressure sensors" not in currLine and "low pt" not in currLine):
             currLine = str(ser.readline())
-            print(currLine);
-            if time.time() - start > 1.5:
-                start = time.time()
-                print("looking for low pressure input")
+            if (currLine != "b''"):
+                print(currLine)
+                if time.time() - start > 1.5:
+                    start = time.time()
+                    print("looking for low pressure input")
+            else:
+                fails += 1
+            if (fails == fail_num):
+                self.stop_thread("Connection Lost")
+                return
         numLowSensors = self.numLowPressure
         byteNum = (str(numLowSensors) + "\r\n").encode('utf-8')
         print("write low sensor nums: {}".format(ser.write(byteNum)))
@@ -146,8 +164,12 @@ class SerialThread(QRunnable):
 
         def getLatestSerialInput():
             line = ser.readline()
+            start = time.time()
             while(ser.in_waiting > 0):
                 line = ser.readline()
+                if time.time() - start > 1.5:
+                    start = time.time()
+                    print("looking for low pressure input")
             return line.decode('utf-8').strip()
 
 
@@ -235,19 +257,20 @@ class SerialThread(QRunnable):
 
 
             except Exception as e:
-                print("Crash: {}".format(e))
-                ser.close()
+                self.stop_thread("Error in reading loop\nCrash: {}".format(e))
                 break
 
-        ser.close()
+        self.stop_thread("Thread Stopped")
 
 
-
+    def stop_thread(self,msg=''):
+        SerialThread.running = False
+        if self.ser:
+            ser.close()
+        if msg:
+            print("{}: ".format(self.name),msg)
         self.signals.finished.emit()
 
-    @staticmethod
-    def stop_thread():
-        SerialThread.running = False
 
     def update_plot(self):
 
