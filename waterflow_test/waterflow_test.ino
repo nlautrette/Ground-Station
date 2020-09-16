@@ -22,16 +22,23 @@ int numHighPressure = 0;
 
 void setup() {
   Serial.begin(9600);
-  
-  //while(Serial.available() == 0);
-  //int valRead = Serial.parseInt();
-  //Serial.print(valRead);
+  while (Serial.available() == 0)
+  {
+    Serial.println("Waiting for Initiation");
+    delay(5000);
+  }
+
+  while (Serial.available() > 0)
+  {
+    Serial.read();
+  }
   
   Serial.println("How many low pressure sensors are connected?");
   Serial.read();
   while (Serial.available() == 0); //While there is no response
   
   numLowPressure = Serial.parseInt();
+ 
   //numLowPressure = Serial.read() - 48;
   
   Serial.println("How many high pressure sensors are connected?");
@@ -81,6 +88,7 @@ int convertedLow1, convertedLow2, convertedLow3, convertedLow4, convertedHigh1, 
 
 int periodic = 100; // take data 10 times a second.
 void loop() {
+
   currTime = millis();
   if((currTime%int(periodic)) == 0) {
     if (Serial.available() > 0) {
