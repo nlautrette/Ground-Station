@@ -41,8 +41,15 @@ display_all = False
 
 filename = input("Which file should the data be written to?\n")
 
-ser.write(0)
-print("wrote 0")
+currLine = str(ser.readline())
+while("Waiting for Initiation" not in currLine):
+    time.sleep(5)
+    currLine = str(ser.readline())
+    print("Waiting for Initiation")
+if("Waiting for Initiation" in currLine):
+        print("Detected")  
+        ser.write("0\r\n".encode('utf-8'))
+        print("wrote 0")
 
 currLine = str(ser.readline())
 while ("low pressure sensors" not in currLine):
