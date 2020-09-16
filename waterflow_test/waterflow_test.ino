@@ -22,17 +22,20 @@ int numHighPressure = 0;
 
 void setup() {
   Serial.begin(9600);
-
-  while(Serial.available() == 0);
-  int valRead = Serial.parseInt();
-  Serial.print(valRead);
+  
+  //while(Serial.available() == 0);
+  //int valRead = Serial.parseInt();
+  //Serial.print(valRead);
   
   Serial.println("How many low pressure sensors are connected?");
-  while (Serial.available() == 0);
+  Serial.read();
+  while (Serial.available() == 0); //While there is no response
+  
   numLowPressure = Serial.parseInt();
   //numLowPressure = Serial.read() - 48;
   
   Serial.println("How many high pressure sensors are connected?");
+  Serial.read();
   while (Serial.available() == 0);
 
   numHighPressure = Serial.parseInt();
