@@ -1,13 +1,13 @@
+import select
+import sys
+import numpy as np
+import matplotlib.pyplot as plt
 import serial
 import serial.tools.list_ports
 import time
 import csv
 import matplotlib
 matplotlib.use("tkAgg")
-import matplotlib.pyplot as plt
-import numpy as np
-import sys
-import select
 #import pandas as pd
 
 NUMDATAPOINTS = 400
@@ -17,10 +17,13 @@ print("Starting")
 chosenCom = ""
 ports = list(serial.tools.list_ports.comports())
 for p in ports:
-    print(p)
-    if "Arduino" in p.description or "ACM" in p.description or "cu.usbmodem" in p[0]:
+    # print(p)
+    # print(p.description)
+    # print(p[0])
+    # print(p.name)
+    if "Arduino" in p.description or "ACM" in p.description or "ACM" in p.name or "cu.usbmodem" in p[0]:
         chosenCom = p[0]
-        print("Chosen COM: {}".format(p))
+        #print("Chosen COM: {}".format(p))
 print("Chosen COM {}".format(chosenCom))
 #ser = serial.Serial('/dev/tty/COM3')
 ser = serial.Serial(chosenCom, 9600)
@@ -39,27 +42,37 @@ display_all = False
 filename = input("Which file should the data be written to?\n")
 
 currLine = str(ser.readline())
+while("Waiting for Initiation" not in currLine):
+    time.sleep(5)
+    currLine = str(ser.readline())
+    print("Waiting for Initiation")
+if("Waiting for Initiation" in currLine):
+        print("Detected")  
+        ser.write("0\r\n".encode('utf-8'))
+        print("wrote 0")
+
+currLine = str(ser.readline())
 while ("low pressure sensors" not in currLine):
     time.sleep(500)
     currLine = str(ser.readline())
     print("looking for low pressure input")
-numLowSensors = int(input(currLine+"\n"))
+numLowSensors = int(input(currLine + "\n"))
 byteNum = (str(numLowSensors) + "\r\n").encode('utf-8')
 print("write low sensor nums: {}".format(ser.write(byteNum)))
 
 currLine = str(ser.readline())
 while ("high pressure sensors" not in currLine):
-    #time.sleep(500)
+    # time.sleep(500)
     currLine = str(ser.readline())
     print("looking for high pressure input")
-numHighSensors = int(input(currLine+"\n"))
-byteNum = (str(numHighSensors)+"\r\n").encode('utf-8')
+numHighSensors = int(input(currLine + "\n"))
+byteNum = (str(numHighSensors) + "\r\n").encode('utf-8')
 print("write high sensor nums: {}".format(ser.write(byteNum)))
 
 sensors = numLowSensors + numHighSensors
-#sensors = int(input("How many sensors are connected?\n")) #set to how many sensors are connected
-print(ser.readline().decode("utf-8")) # There are x low PTs and x high PTs.
-headers = ser.read_until().decode("utf-8") # low1, low2, low3, high1.....
+# sensors = int(input("How many sensors are connected?\n")) #set to how many sensors are connected
+print(ser.readline().decode("utf-8"))  # There are x low PTs and x high PTs.
+headers = ser.read_until().decode("utf-8")  # low1, low2, low3, high1.....
 headerList = headers.split(",")
 print(headerList)
 
@@ -76,18 +89,18 @@ print(np.shape(ax))
 plots = []
 
 for num in range(numLowSensors):
-    ax[0,num].set_title(headerList[num])
-    plot, = ax[0,num].plot(data[num])
+    ax[0, num].set_title(headerList[num])
+    plot, = ax[0, num].plot(data[num])
     plots.append(plot)
 
 for num in range(numHighSensors):
-    ax[1,num].set_title(headerList[num+numLowSensors])
-    plot, = ax[1,num].plot(data[num+numLowSensors])
+    ax[1, num].set_title(headerList[num + numLowSensors])
+    plot, = ax[1, num].plot(data[num + numLowSensors])
     plots.append(plot)
 
-with open(filename,"a") as f:
+with open(filename, "a") as f:
     headers = "time," + headers
-    f.write(headers+"\n")
+    f.write(headers + "\n")
 
 ser.write("0\r\n".encode('utf-8'))
 
@@ -106,10 +119,13 @@ print("starting loop")
 while True:
     try:
         line = getLatestSerialInput()
+
+        # process
+
         values = line.strip().split(',')
 
         if values[0] == '':
-            values[0] = str(last_first_value);
+            values[0] = str(last_first_value)
         if len(values) < sensors:
             print("not enough data, continuing")
             continue
@@ -119,11 +135,11 @@ while True:
 
         print("values: {}".format(values))
 
-        with open(filename,"a") as f:
-            toWrite = str(time.time())+"," + ",".join(values)+"\n"
+        with open(filename, "a") as f:
+            toWrite = str(time.time()) + "," + ",".join(values) + "\n"
             f.write(toWrite)
             #writer = csv.writer(f,delimiter=",")
-            #writer.writerow(np.array([time.time(),values]).flatten())
+            # writer.writerow(np.array([time.time(),values]).flatten())
 
         for i in range(sensors):
             data[i].append(float(values[i]))
@@ -140,12 +156,12 @@ while True:
 
         if display:
             for num in range(numLowSensors):
-                ax[0,num].relim()
-                ax[0,num].autoscale_view()
+                ax[0, num].relim()
+                ax[0, num].autoscale_view()
 
             for num in range(numHighSensors):
-                ax[1,num].relim()
-                ax[1,num].autoscale_view()
+                ax[1, num].relim()
+                ax[1, num].autoscale_view()
 
             fig.canvas.draw()
             fig.canvas.flush_events()
