@@ -38,9 +38,7 @@ void setup() {
   while (Serial.available() == 0); //While there is no response
   
   numLowPressure = Serial.parseInt();
- 
-  //numLowPressure = Serial.read() - 48;
-  
+   
   Serial.println("How many high pressure sensors are connected?");
   Serial.read();
   while (Serial.available() == 0);
@@ -113,40 +111,27 @@ void loop() {
         //Serial.println("Added first low PT reading; 
       }
       if(numLowPressure >= 2){
-        //sprintf(toWriteBuffer + bufferIndex, "%d,", convertedLow2);
-        //bufferIndex += String(convertedLow2).length();
         Serial.print(", ");
         Serial.print(convertedLow2);
       }
       if(numLowPressure >= 3){
-        //sprintf(toWriteBuffer + bufferIndex, "%d,", convertedLow3);
-        //bufferIndex += String(convertedLow3).length();
         Serial.print(", ");
         Serial.print(convertedLow3);
       }
       if(numLowPressure >= 4){
-        //sprintf(toWriteBuffer + bufferIndex, "%d,", convertedLow4);
-        //bufferIndex += String(convertedLow4).length();
         Serial.print(", ");
         Serial.print(convertedLow4);
       }
 
       if(numHighPressure >= 1){
-        //sprintf(toWriteBuffer + bufferIndex, "%d,", convertedHigh1);
-        //bufferIndex += String(convertedHigh1).length();
         Serial.print(", ");
         Serial.print(convertedHigh1);
       }
       if(numHighPressure >= 2){
-        //sprintf(toWriteBuffer + bufferIndex, "%d,", convertedHigh2);
-        //bufferIndex += String(convertedHigh2).length();
         Serial.print(", ");
         Serial.print(convertedHigh2);
       }
       Serial.print("\n");
-      
-      //String toWrite = String(converted_inject_low)+','+String(converted_prop_low); // +','+String(converted_prop_high); //+','+String(converted_high_prop);
-      //Serial.println(toWriteBuffer);
     }
   }
 }
