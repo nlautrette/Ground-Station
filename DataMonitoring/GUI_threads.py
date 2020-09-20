@@ -8,7 +8,8 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationTool
 from matplotlib.figure import Figure
 
 import time, traceback, sys, random, select
-
+import numpy as np
+import csv
 
 import serial
 import serial.tools.list_ports
@@ -27,7 +28,7 @@ class SerialThread(QRunnable):
 
     running = True
 
-    def __init__(self, graphs):
+    def __init__(self, graphs, valve_signals, filename):
         super(SerialThread, self).__init__()
         self.signals = SerialSignals()
         self.name = "Serial Thread"
@@ -37,6 +38,7 @@ class SerialThread(QRunnable):
         self.graphs = graphs
         self.canvas = graphs["low_pt"][0]
 
+        # I think this is irrelevant now?
         n_data = 400
         self.xdata = list(range(n_data))
         self.ydata = [0 for i in range(n_data)]#[random.randint(0, 10) for i in range(n_data)]
@@ -45,11 +47,22 @@ class SerialThread(QRunnable):
         plot_refs = self.canvas.axes.plot(self.xdata, self.ydata, 'b')
         self._plot_ref = plot_refs[0]
 
+
+        self.low_plot_ref_list = []
+        for i in range(len(graphs["low_pt"])):
+            canvas = graphs["low_pt"]
+            plot_refs = canvas.axes.plot(self.xdata, self.ydata, 'b')
+            self.low_plot_ref_list.append(plot_refs[0])
+
+
         # ---------- Serial Config ----------------------------------
 
-        self.numLowPressure = 1
+        self.numLowPressure = 3
         self.numHighPressure = 0
         self.ser = None
+
+        self.valve_signals = valve_signals
+        self.filename = filename
 
 
     @pyqtSlot()
@@ -66,6 +79,7 @@ class SerialThread(QRunnable):
 
         NUMDATAPOINTS = 400
         fail_num = 15
+        should_print = False
 
         print("Starting")
 
@@ -94,12 +108,8 @@ class SerialThread(QRunnable):
         display_all = False
         repeat = 1
 
-        # if args.file:
-        #     filename = next_file_name(args.file)
-        # else:
-        #     filename = next_file_name("waterflow")
-        # # filename = input("Which file should the data be written to?\n")
-        # print("Writing data to: {}".format(filename))
+        # filename = input("Which file should the data be written to?\n")
+        print("Writing data to: {}".format(self.filename))
 
 
         fails = 0
@@ -161,23 +171,26 @@ class SerialThread(QRunnable):
         #     plot, = ax[1,num].plot(data[num+numLowSensors])
         #     plots.append(plot)
         #
-        # with open(filename,"a") as f:
-        #     headers = "time," + headers
-        #     f.write(headers+"\n")
+        with open(self.filename,"a") as f:
+            headers = "time," + headers
+            f.write(headers+"\n")
         plots = [self._plot_ref]
 
         ser.write("0\r\n".encode('utf-8'))
 
 
+        #TODO: Figure out why this is crashing on close
         def getLatestSerialInput():
-            line = ser.readline()
-            start = time.time()
-            while(ser.in_waiting > 0):
+            if ser:
                 line = ser.readline()
-                if time.time() - start > 1.5:
-                    start = time.time()
-                    print("looking for low pressure input")
-            return line.decode('utf-8').strip()
+                start = time.time()
+                while(ser.in_waiting > 0):
+                    if ser:
+                        line = ser.readline()
+                        if time.time() - start > 1.5:
+                            start = time.time()
+                            print("looking for low pressure input")
+                return line.decode('utf-8').strip()
 
 
         last_first_value = 0
@@ -185,8 +198,9 @@ class SerialThread(QRunnable):
 
         print("starting loop")
         while SerialThread.running:
-            try:
-                line = getLatestSerialInput()
+            # try:
+            line = getLatestSerialInput()
+            if ',' in line:
                 values = line.strip().split(',')
 
                 if values[0] == '':
@@ -198,20 +212,23 @@ class SerialThread(QRunnable):
                 values = [val.strip() for val in values]
                 last_first_value = values[0]
 
-                print("values: {}".format(values))
+                if should_print:
+                    print("values: {}".format(values))
 
-                # with open(filename,"a") as f:
-                #     toWrite = str(time.time())+"," + ",".join(values)+"\n"
-                #     f.write(toWrite)
-                    #writer = csv.writer(f,delimiter=",")
-                    #writer.writerow(np.array([time.time(),values]).flatten())
+
+                with open(self.filename,"a") as fe:
+                    toWrite = str(time.time())+"," + ",".join(values)+"\n"
+                    fe.write(toWrite)
+                    writer = csv.writer(fe,delimiter=",")
+                    # writer.writerow(np.array([time.time(),values]).flatten())
                 # print("Repeat: {}".format(repeat))
 
-                for i in range(sensors):
+                for i in range(1):  #TODO: CHANGE BACK range(sensors):
                     data[i].append(float(values[i]))
-                    print(len(data[i]))
                     toDisplay[i] = data[i][-NUMDATAPOINTS:]
-                    print(len(toDisplay[i]))
+                    if should_print:
+                        print(len(data[i]))
+                        print(len(toDisplay[i]))
 
                     if display_all:
                         plots[i].set_ydata(data[i])
@@ -239,6 +256,13 @@ class SerialThread(QRunnable):
                 else:
                     repeat += 1
 
+                # valve stuff
+                for name in self.valve_signals.keys():
+                    if (self.valve_signals[name] != 0):
+                        print(self.valve_signals[name])
+                        byteNum = (str(self.valve_signals[name]) + "\r\n").encode('utf-8')
+                        ser.write(byteNum)
+                        self.valve_signals[name] = 0
 
                 # data_in = select.select([sys.stdin], [], [], 0.1)[0]
                 # if data_in:
@@ -261,11 +285,23 @@ class SerialThread(QRunnable):
                 #         toDisplay = [[] for i in range(sensors)]
                 #     else:
                 #         print("You entered: %s" % c)
+            else:
+                print(line)
 
-
-            except Exception as e:
-                self.stop_thread("Error in reading loop\nCrash: {}".format(e))
-                break
+            # except Exception as e:
+            #     # self.stop_thread("Error in reading loop\nCrash: {}".format(e))
+            #     print("Error in reading loop\nCrash: {}")#.format(e))
+            #
+            #     exception_type, exception_object, exception_traceback = sys.exc_info()
+            #     filename = exception_traceback.tb_frame.f_code.co_filename
+            #     line_number = exception_traceback.tb_lineno
+            #
+            #     print("Exception type: ", exception_type)
+            #     print("File name: ", filename)
+            #     print("Line number: ", line_number)
+            #
+            #     ser.close()
+            #     break
 
         self.stop_thread("Thread Stopped")
 
@@ -273,7 +309,7 @@ class SerialThread(QRunnable):
     def stop_thread(self,msg=''):
         SerialThread.running = False
         if self.ser:
-            ser.close()
+            self.ser.close()
         if msg:
             print("{}: ".format(self.name),msg)
         self.signals.finished.emit()

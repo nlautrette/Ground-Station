@@ -33,10 +33,12 @@ class MplCanvas(FigureCanvasQTAgg):
         super(MplCanvas, self).__init__(fig)
 
 class StatusGroup(QWidget):
-    def __init__(self, name, *args, **kwargs):
+    def __init__(self, name, msg, valve_signals, *args, **kwargs):
         super(StatusGroup, self).__init__(*args, **kwargs)
 
+        self.valve_signals = valve_signals
         self.name = name
+        self.msg = msg
         layout = QGridLayout()
 
         self.open_btn = QPushButton("OPEN")
@@ -58,11 +60,13 @@ class StatusGroup(QWidget):
         if self.status.closed:
             print("Opening " + self.name)
             self.status.switch()
+            self.valve_signals[self.name] = self.msg
 
     def close_act(self):
         if not self.status.closed:
             print("Closing " + self.name)
             self.status.switch()
+            self.valve_signals[self.name] = self.msg
 
 class Status(QWidget):
     def __init__(self, *args, **kwargs):
@@ -133,13 +137,17 @@ class MainWindow(QMainWindow):
 
         # ---------- Valves -----------------------------------------
 
+        self.valve_signals = {}
+
         # Dynamically create StatusGroup objects and formatted labels for all valves
 
         valves = ["Pressurant", "LOX GEMS", "Propane GEMS", "LOX 2-WAY",
         "Propane 2-WAY", "LOX 5-WAY", "Propane 5-WAY"]
+        valve_msgs = [0, 'c', 'z', 'a', 'x', 'b', 'y']
         StatusGroups = {}
-        for i,name in enumerate(valves):
-            StatusGroups[name] = StatusGroup(name)
+        for i in range(len(valves)):
+            StatusGroups[valves[i]] = StatusGroup(valves[i],valve_msgs[i],self.valve_signals)
+            self.valve_signals[valves[i]] = 0
 
         label_names = ['Pressurant', 'LOX', 'Propane', 'GEMS', '2-WAY', '5-WAY']
         valve_labels = {}
@@ -241,9 +249,11 @@ class MainWindow(QMainWindow):
 
         # Sets `beans` to be called every time serialThread sends a
         # 'data' signal
-        self.serialThread = SerialThread(self.graphs)
+        self.serialThread = SerialThread(self.graphs, self.valve_signals, file_path)
         self.serialThread.signals.data.connect(self.beans)
         self.threadpool.start(self.serialThread)
+
+
 
 
         # ---------- Display ----------------------------------------
