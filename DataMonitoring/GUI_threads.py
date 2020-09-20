@@ -44,13 +44,15 @@ class SerialThread(QRunnable):
         self.ydata = [0 for i in range(n_data)]#[random.randint(0, 10) for i in range(n_data)]
 
         #Initialize Plot
-        plot_refs = self.canvas.axes.plot(self.xdata, self.ydata, 'b')
-        self._plot_ref = plot_refs[0]
+        # plot_refs = self.canvas.axes.plot(self.xdata, self.ydata, 'b')
+        # self._plot_ref = plot_refs[0]
 
 
-        self.low_plot_ref_list = []
+        self.low_plot_ref_list = []#[self._plot_ref]
+        self.canvas_list = []
         for i in range(len(graphs["low_pt"])):
-            canvas = graphs["low_pt"]
+            canvas = graphs["low_pt"][i]
+            self.canvas_list.append(canvas)
             plot_refs = canvas.axes.plot(self.xdata, self.ydata, 'b')
             self.low_plot_ref_list.append(plot_refs[0])
 
@@ -174,7 +176,8 @@ class SerialThread(QRunnable):
         with open(self.filename,"a") as f:
             headers = "time," + headers
             f.write(headers+"\n")
-        plots = [self._plot_ref]
+
+        plots = self.low_plot_ref_list #[self._plot_ref]
 
         ser.write("0\r\n".encode('utf-8'))
 
@@ -223,7 +226,7 @@ class SerialThread(QRunnable):
                     # writer.writerow(np.array([time.time(),values]).flatten())
                 # print("Repeat: {}".format(repeat))
 
-                for i in range(1):  #TODO: CHANGE BACK range(sensors):
+                for i in range(len(plots)):  #TODO: CHANGE BACK range(sensors):
                     data[i].append(float(values[i]))
                     toDisplay[i] = data[i][-NUMDATAPOINTS:]
                     if should_print:
@@ -240,17 +243,18 @@ class SerialThread(QRunnable):
                     #     self.ydata = [0 for i in range(400-len(toDisplay[i]))].extend[toDisplay[i]]
                     #     plots[i].set_ydata(self.ydata)
 
-
+                # original for 1
                 if display and repeat % 2 == 0:
-                    for num in range(numLowSensors):
-                        self.canvas.axes.relim()
-                        self.canvas.axes.autoscale_view()
+                    for j in range(len(plots)):
+
+                        self.canvas_list[j].axes.relim()
+                        self.canvas_list[j].axes.autoscale_view()
 
                     # for num in range(numHighSensors):
                     #     ax[1,num].relim()
                     #     ax[1,num].autoscale_view()
 
-                    self.canvas.draw()
+                        self.canvas_list[j].draw()
                     # self.canvas.flush_events()
                     repeat = 1
                 else:
