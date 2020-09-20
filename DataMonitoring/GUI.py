@@ -14,12 +14,22 @@ from datetime import datetime
 # Contains Thread Definitions
 from GUI_threads import *
 
+sensor_type_to_name = {
+        "low_pt" : "Low Pressure",
+        "high_pt" : "High Pressure",
+        "temp" : "Temperature"
+}
+
 class MplCanvas(FigureCanvasQTAgg):
 
-    def __init__(self, parent=None, width=5, height=4, dpi=100):
-        fig = Figure(figsize=(width, height), dpi=dpi)
-        # number ### is interpreted as nrows ncols index
-        self.axes = fig.add_subplot(111)
+    def __init__(self, parent=None, width=5, height=4, dpi=100, fig=None, nrows=None, ncols=None, index=None):
+        if fig:
+            self.axes = fig.add_subplot(nrows,ncols,index)
+        else:
+            fig = Figure(figsize=(width, height), dpi=dpi)
+            # nrows ncols index
+            self.axes = fig.add_subplot(1,1,1)
+
         super(MplCanvas, self).__init__(fig)
 
 class StatusGroup(QWidget):
@@ -87,14 +97,14 @@ class Status(QWidget):
             self.l.setText(self.open_txt)
             self.set_color("#60d936") # Light Green
             self.closed = False
-            # TODO: OPENING ACTION
+            # TODO: VALVE OPENING ACTION
         elif self.color == 'green':
             # Change to closed (red)
             self.color = 'red'
             self.l.setText(self.closed_txt)
             self.set_color("#ee230c") # Bright Red
             self.closed = True
-            # TODO: CLOSING ACTION
+            # TODO: VALVE CLOSING ACTION
 
     def set_color(self, color):
         palette = self.palette()
@@ -104,8 +114,12 @@ class Status(QWidget):
 
 class MainWindow(QMainWindow):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, file_path, sensor_types, sensor_nums, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
+
+        self.sensor_types = sensor_types.copy()
+        self.sensor_nums = sensor_nums.copy()
+
 
         mainlayout = QGridLayout()
 
@@ -163,11 +177,12 @@ class MainWindow(QMainWindow):
 
         # ---------- Graphs -----------------------------------------
 
+        # Remnants from before graphing was moved into separate thread
         # Create the maptlotlib FigureCanvas object,
         # which defines a single set of axes as self.axes.
-        self.canvas = MplCanvas(self, width=5, height=4, dpi=100)
+        # self.canvas = MplCanvas(self, width=5, height=4, dpi=100)
         # sc.axes.plot([0,1,2,3,4], [10,1,20,3,40])
-        mainlayout.addWidget(self.canvas,1,1,1,1)
+        # mainlayout.addWidget(self.canvas,1,1,1,1)
 
         # n_data = 50
         # self.xdata = list(range(n_data))
@@ -182,12 +197,51 @@ class MainWindow(QMainWindow):
         # self.timer.timeout.connect(self.update_plot)
         # self.timer.start()
 
+        # Create the maptlotlib FigureCanvas object,
+        # which defines a single set of axes as self.axes.
+        # self.graphs = []
+        # self.graphs.append(MplCanvas(self, width=5, height=4, dpi=100))
+
+
+        # Dynamically create the correct number of graphs based off input numbers
+        graphWidget = QTabWidget()
+        self.graphs = {}
+        self.figures = {}
+        for sensor in self.sensor_types:
+            # TODO: make graph allocation more generalized,
+            # since we may have more than 6 of a given type of sensor (temp?)
+            self.graphs[sensor] = []
+            num = self.sensor_nums[sensor]
+            tabWidget = QWidget()
+            tabGrid = QGridLayout()
+            if num == 1:
+                grid_pos = self.generate_pos(1,1)
+            elif num <= 4:
+                grid_pos = self.generate_pos(2,2)
+            else:
+                grid_pos = self.generate_pos(2,3)
+
+            # fig = Figure(figsize=(5, 4), dpi=100)
+            # self.figures[sensor] = fig
+            for i in range(num):
+                canvas = MplCanvas(self,width=5, height=4, dpi=100)
+                self.graphs[sensor].append(canvas)
+                row,col = next(grid_pos)
+                tabGrid.addWidget(canvas,row,col)
+            tabWidget.setLayout(tabGrid)
+            # else:
+
+            graphWidget.addTab(tabWidget, sensor_type_to_name[sensor])
+        # graphWidget.addTab(QLabel("Beans"),"Beans")
+        mainlayout.addWidget(graphWidget,1,1,1,1)
+
+
         # Creates a threadpool to handle scheduled threads
         self.threadpool = QThreadPool()
 
-        # Sets `update_plot` to be called every time serialThread sends a
+        # Sets `beans` to be called every time serialThread sends a
         # 'data' signal
-        self.serialThread = SerialThread(self.canvas)
+        self.serialThread = SerialThread(self.graphs)
         self.serialThread.signals.data.connect(self.beans)
         self.threadpool.start(self.serialThread)
 
@@ -219,6 +273,16 @@ class MainWindow(QMainWindow):
     def beans(self, num):
         print("{} beans".format(num))
 
+    def generate_pos(self,nrows,ncols):
+        rows = 0
+        cols = 0
+        while rows < nrows:
+            while cols < ncols:
+                yield (rows,cols)
+                cols += 1
+            cols = 0
+            rows += 1
+
     # Override close event to stop threads
     def closeEvent(self, event):
         print("Shutting down threads")
@@ -231,6 +295,9 @@ class Entry(QMainWindow):
     def __init__(self, parent=None):
         super(Entry, self).__init__(parent)
 
+        self.sensors = ["low_pt", "high_pt", "temp"]
+        self.sensor_nums = {}
+
         mainlayout = QGridLayout()
 
         # row 0
@@ -242,10 +309,10 @@ class Entry(QMainWindow):
 
         self.storage_path = 'data'
 
-        label_names = ['Base Filename:', 'Folder:', 'File Path:','# Low PTs:', '# High PTs:']
-        label_ids = ['base_file', 'folder', 'file_path', 'low_pt', 'high_pt']
+        label_names = ['Base Filename:', 'Folder:', 'File Path:','# Low PTs:', '# High PTs:', '# Temp Sensors:']
+        label_ids = ['base_file', 'folder', 'file_path', 'low_pt', 'high_pt', 'temp']
         self.labels = {}
-        line_edit_defaults = ['waterflow', self.storage_path, '', '0', '0']
+        line_edit_defaults = ['waterflow', self.storage_path, '', '0', '0','0']
         self.line_edits = {}
         label_font = QFont("Lucida Grande",14, QFont.Bold)
         for i,name in enumerate(label_names):
@@ -254,18 +321,19 @@ class Entry(QMainWindow):
             self.labels[label_ids[i]] = label
             mainlayout.addWidget(label,i+1,0)
             # create a QLineEdit for all rows except 'File Path'
-            if name !='File Path:':
+            if name =='File Path:':
+                line_edit = QLabel('')
+                self.labels['file_path_text'] = line_edit
+            else:
                 line_edit = QLineEdit()
                 line_edit.setText(line_edit_defaults[i])
                 self.line_edits[label_ids[i]] = line_edit
-            else:
-                line_edit = QLabel('')
-                self.labels['file_path_text'] = line_edit
             mainlayout.addWidget(line_edit,i+1,1)
 
         # Set various object settings
         self.line_edits['low_pt'].setValidator(QIntValidator(0,5))
         self.line_edits['high_pt'].setValidator(QIntValidator(0,2))
+        self.line_edits['temp'].setValidator(QIntValidator(0,7))
         self.line_edits['base_file'].textChanged.connect(self.update_full_file_path)
         self.line_edits['folder'].textChanged.connect(self.update_full_file_path)
         self.update_full_file_path()
@@ -290,6 +358,13 @@ class Entry(QMainWindow):
     def full_file_name(self, base):
         return "{}_{}.csv".format(base,datetime.now().strftime('%m-%d-%y_%H:%M'))
 
+    def update_sensor_vals(self):
+        for sensor_type in self.sensors:
+            val = int(self.line_edits[sensor_type].text())
+            if val > 0:
+                self.sensor_nums[sensor_type] = val
+
+
     def on_launchButton_clicked(self):
         if not os.path.isdir(self.folder_name):
             message = '''<p>The given folder to save data in does not exist:</p>    {}
@@ -304,7 +379,8 @@ class Entry(QMainWindow):
             else:
                 return
 
-        self.mainWindow = MainWindow()
+        self.update_sensor_vals()
+        self.mainWindow = MainWindow(self.labels['file_path_text'].text(), list(self.sensor_nums.keys()), self.sensor_nums)
         self.mainWindow.show()
         self.hide()
 

@@ -13,6 +13,12 @@ import time, traceback, sys, random, select
 import serial
 import serial.tools.list_ports
 
+'''this is NOT finalized - just a placehold for actual values'''
+id_to_sensor = {
+    1 : "Propane Tank",
+    1 : "LOX Tank",
+    3 : "Injector"
+}
 
 class SerialThread(QRunnable):
     '''
@@ -21,14 +27,15 @@ class SerialThread(QRunnable):
 
     running = True
 
-    def __init__(self, canvas):
+    def __init__(self, graphs):
         super(SerialThread, self).__init__()
         self.signals = SerialSignals()
         self.name = "Serial Thread"
 
         # ---------- Display Config ---------------------------------
 
-        self.canvas = canvas
+        self.graphs = graphs
+        self.canvas = graphs["low_pt"][0]
 
         n_data = 400
         self.xdata = list(range(n_data))
