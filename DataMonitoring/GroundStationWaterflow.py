@@ -17,13 +17,14 @@ print("Starting")
 chosenCom = ""
 ports = list(serial.tools.list_ports.comports())
 for p in ports:
-    # print(p)
-    # print(p.description)
-    # print(p[0])
-    # print(p.name)
-    if "Arduino" in p.description or "ACM" in p.description or "ACM" in p.name or "cu.usbmodem" in p[0]:
-        chosenCom = p[0]
+#    print(p)
+#    print(p.description)
+#    print(p[0])
+#    print(p.name)
+#    if("Arduino" in p.description or "ACM" in p.description or "ACM" in p.nameor "cu.usbmodem" in p[0]):
+#        chosenCom = p[0]
         #print("Chosen COM: {}".format(p))
+    chosenCom = p[0]
 print("Chosen COM {}".format(chosenCom))
 #ser = serial.Serial('/dev/tty/COM3')
 ser = serial.Serial(chosenCom, 9600)
@@ -47,7 +48,7 @@ while("Waiting for Initiation" not in currLine):
     currLine = str(ser.readline())
     print("Waiting for Initiation")
 if("Waiting for Initiation" in currLine):
-        print("Detected")  
+        print("Detected")
         ser.write("0\r\n".encode('utf-8'))
         print("wrote 0")
 
