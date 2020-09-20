@@ -32,13 +32,13 @@ void setup() {
   {
     Serial.read();
   }
-  
+
   Serial.println("How many low pressure sensors are connected?");
   Serial.read();
   while (Serial.available() == 0); //While there is no response
-  
+
   numLowPressure = Serial.parseInt();
-   
+
   Serial.println("How many high pressure sensors are connected?");
   Serial.read();
   while (Serial.available() == 0);
@@ -99,16 +99,16 @@ void loop() {
         shouldPrint = !shouldPrint;
       }
     }
-  
+
     readData();
-  
+
     convertData();
-    
+
     //need some check on magnitude of reading to see if we should print data.
     if(shouldPrint){
       if(numLowPressure >= 1){
         Serial.print(convertedLow1);
-        //Serial.println("Added first low PT reading; 
+        //Serial.println("Added first low PT reading;
       }
       if(numLowPressure >= 2){
         Serial.print(", ");
@@ -207,5 +207,7 @@ float lowPressureConversion(int raw){
 }
 
 float highPressureConversion(int raw){
-  return (6.612739309669555*(raw) - 1237); //0.88 / 4.4 * 1024)); //- 1237.7612969223858);
+  //using amplifier w/out offset.
+  return ((float)(raw / 1024) * 4.8 - 1.3) * (5000/3.5);
+  //return (6.612739309669555*(raw) - 1237); //0.88 / 4.4 * 1024)); //- 1237.7612969223858);
 }
