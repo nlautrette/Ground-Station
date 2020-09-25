@@ -60,7 +60,7 @@ class SerialThread(QRunnable):
         # ---------- Serial Config ----------------------------------
 
         self.numLowPressure = 3
-        self.numHighPressure = 0
+        self.numHighPressure = 1
         self.ser = None
 
         self.valve_signals = valve_signals

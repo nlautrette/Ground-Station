@@ -136,8 +136,8 @@ def main(args):
             with open(filename,"a") as f:
                 toWrite = str(time.time())+"," + ",".join(values)+"\n"
                 f.write(toWrite)
-                #writer = csv.writer(f,delimiter=",")
-                #writer.writerow(np.array([time.time(),values]).flatten())
+                writer = csv.writer(f,delimiter=",")
+                writer.writerow(np.array([time.time(),values]).flatten())
 
             for i in range(sensors):
                 data[i].append(float(values[i]))
