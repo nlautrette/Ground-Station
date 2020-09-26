@@ -173,7 +173,6 @@ void loop() {
       if(numLowPressure >= 4){
         //sprintf(toWriteBuffer + bufferIndex, "%d,", convertedLow4);
         //bufferIndex += String(convertedLow4).length();
-        Serial.print(", ");
         Serial.print(convertedLow4);
       } else {
         Serial.print("-1");
