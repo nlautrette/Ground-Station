@@ -366,7 +366,7 @@ class Entry(QMainWindow):
 
     '''Given a base file name BASE, will return the correct full name "BASE_MM-DD-YY_#{i}"'''
     def full_file_name(self, base):
-        return "{}_{}.csv".format(base,datetime.now().strftime('%m-%d-%y_%H:%M'))
+        return "{}_{}.csv".format(base,datetime.now().strftime('%m-%d-%y__%H_%M'))
 
     def update_sensor_vals(self):
         for sensor_type in self.sensors:
