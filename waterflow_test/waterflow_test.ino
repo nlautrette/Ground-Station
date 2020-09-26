@@ -23,15 +23,15 @@ int numLowPressure = 0;
 int numHighPressure = 0;
 
 void setup() {
-  Serial.begin(57600);
+  Serial.begin(9600);
   //Setup and start RF communication
 //  RFSerial.begin(57600);
 
   //while(!Serial.available());
-  
+
 Serial.println("How many low pressure sensors are connected?");
   while (Serial.available() == 0) {
-    
+
       delay(50);
       if (millis() - currTime > 2000) {
         Serial.println("waiting for low pt #...");
@@ -39,9 +39,9 @@ Serial.println("How many low pressure sensors are connected?");
       }
     }
   numLowPressure = Serial.parseInt();
-  
+
 //  numLowPressure = Serial.read() - 48;
-  
+
 Serial.println("How many high pressure sensors are connected?");
   while (Serial.available() == 0) {
       delay(50);
@@ -50,6 +50,31 @@ Serial.println("How many high pressure sensors are connected?");
         currTime = millis();
       }
     }
+
+
+//   Joey's Code
+//   Serial.begin(9600);
+//   while (Serial.available() == 0)
+//   {
+//     Serial.println("Waiting for Initiation");
+//     delay(5000);
+//   }
+//
+//   while (Serial.available() > 0)
+//   {
+//     Serial.read();
+//   }
+//
+//   Serial.println("How many low pressure sensors are connected?");
+//   Serial.read();
+//   while (Serial.available() == 0); //While there is no response
+//
+//   numLowPressure = Serial.parseInt();
+//
+//   Serial.println("How many high pressure sensors are connected?");
+//   Serial.read();
+//   while (Serial.available() == 0);
+
 
   numHighPressure = Serial.parseInt();
 
@@ -94,65 +119,52 @@ int convertedLow1, convertedLow2, convertedLow3, convertedLow4, convertedHigh1, 
 
 int periodic = 100; // take data 10 times a second.
 void loop() {
+
   currTime = millis();
   if((currTime%int(periodic)) == 0) {
-//    if (Serial.available() > 0) {
-//      int readByte = Serial.read();
-//      if(readByte == 't'){
-//        shouldPrint = true;
-//      } else if(readByte == 'f'){
-//        shouldPrint = false;
-//      } else if(readByte == '0'){
-//        shouldPrint = !shouldPrint;
-//      }
-//    }
-  shouldPrint = true;
-  
+    if (Serial.available() > 0) {
+      int readByte = Serial.read();
+      if(readByte == 't'){
+        shouldPrint = true;
+      } else if(readByte == 'f'){
+        shouldPrint = false;
+      } else if(readByte == '0'){
+        shouldPrint = !shouldPrint;
+      }
+    }
+
     readData();
-  
+
     convertData();
-    
+
     //need some check on magnitude of reading to see if we should print data.
     if(shouldPrint){
       if(numLowPressure >= 1){
         Serial.print(convertedLow1);
-        //Serial.println("Added first low PT reading; 
+        //Serial.println("Added first low PT reading;
       }
       if(numLowPressure >= 2){
-        //sprintf(toWriteBuffer + bufferIndex, "%d,", convertedLow2);
-        //bufferIndex += String(convertedLow2).length();
         Serial.print(", ");
         Serial.print(convertedLow2);
       }
       if(numLowPressure >= 3){
-        //sprintf(toWriteBuffer + bufferIndex, "%d,", convertedLow3);
-        //bufferIndex += String(convertedLow3).length();
         Serial.print(", ");
         Serial.print(convertedLow3);
       }
       if(numLowPressure >= 4){
-        //sprintf(toWriteBuffer + bufferIndex, "%d,", convertedLow4);
-        //bufferIndex += String(convertedLow4).length();
         Serial.print(", ");
         Serial.print(convertedLow4);
       }
 
       if(numHighPressure >= 1){
-        //sprintf(toWriteBuffer + bufferIndex, "%d,", convertedHigh1);
-        //bufferIndex += String(convertedHigh1).length();
         Serial.print(", ");
         Serial.print(convertedHigh1);
       }
       if(numHighPressure >= 2){
-        //sprintf(toWriteBuffer + bufferIndex, "%d,", convertedHigh2);
-        //bufferIndex += String(convertedHigh2).length();
         Serial.print(", ");
         Serial.print(convertedHigh2);
       }
       Serial.print("\n");
-      
-      //String toWrite = String(converted_inject_low)+','+String(converted_prop_low); // +','+String(converted_prop_high); //+','+String(converted_high_prop);
-      //Serial.println(toWriteBuffer);
     }
   }
 }
@@ -228,5 +240,7 @@ float lowPressureConversion(int raw){
 }
 
 float highPressureConversion(int raw){
-  return (6.612739309669555*(raw - 0.88 / 4.4 * 1024)); //- 1237.7612969223858);
+  //using amplifier w/out offset.
+  return ((float)(raw / 1024) * 4.8 - 1.3) * (5000/3.5);
+  //return (6.612739309669555*(raw) - 1237); //0.88 / 4.4 * 1024)); //- 1237.7612969223858);
 }
