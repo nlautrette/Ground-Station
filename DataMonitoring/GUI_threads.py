@@ -48,7 +48,8 @@ class SerialThread(QRunnable):
 
         # ---------- Serial Config ----------------------------------
 
-        self.graph_titles = {'low_pt':['Lox Tank', 'Propane Tank', 'Lox Injector', 'Propane Injector']}
+        self.graph_titles = {'low_pt':['Lox Tank', 'Propane Tank', 'Lox Injector', 'Propane Injector'],'high_pt':['Pressurant Tank']}
+        self.sensor_types = ['low_pt']# 'high_pt', 'temp']
 
         self.numLowPressure = 3
         self.numHighPressure = 1
@@ -74,15 +75,17 @@ class SerialThread(QRunnable):
 
         # Create canvases based on the number of sensors that are actually in use
         self.low_plot_ref_list = []#[self._plot_ref]
-        self.canvas_list = []
+        self.canvas_dict = {}
 
-        for i in range(len(graphs["low_pt"])):
-            canvas = graphs["low_pt"][i]
-            self.canvas_list.append(canvas)
-            # Get plot reference that can be used to update graph later
-            plot_refs = canvas.axes.plot(self.xdata, self.ydata, 'b')
-            self.low_plot_ref_list.append(plot_refs[0])
-            canvas.axes.set_title(self.graph_titles["low_pt"][i])
+        for sensor in self.sensor_types:
+            self.canvas_dict[sensor] = []
+            for i in range(len(graphs[sensor])):
+                canvas = graphs[sensor][i]
+                self.canvas_dict[sensor].append(canvas)
+                # Get plot reference that can be used to update graph later
+                plot_refs = canvas.axes.plot(self.xdata, self.ydata, 'b')
+                self.low_plot_ref_list.append(plot_refs[0])
+                canvas.axes.set_title(self.graph_titles[sensor][i])
 
 
     @pyqtSlot()
@@ -263,17 +266,19 @@ class SerialThread(QRunnable):
 
                 # original for 1
                 if display and repeat % 2 == 0:
-                    for j in range(len(plots)):
+                    for sensor in self.sensor_types:
+                        canvas_list = self.canvas_dict[sensor]
+                        for j in range(len(plots)):
 
-                        self.canvas_list[j].axes.relim()
-                        self.canvas_list[j].axes.autoscale_view()
+                            canvas_list[j].axes.relim()
+                            canvas_list[j].axes.autoscale_view()
 
-                    # for num in range(numHighSensors):
-                    #     ax[1,num].relim()
-                    #     ax[1,num].autoscale_view()
+                        # for num in range(numHighSensors):
+                        #     ax[1,num].relim()
+                        #     ax[1,num].autoscale_view()
 
-                        self.canvas_list[j].draw()
-                    # self.canvas.flush_events()
+                            canvas_list[j].draw()
+                        # self.canvas.flush_events()
                     repeat = 1
                 else:
                     repeat += 1
