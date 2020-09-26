@@ -24,14 +24,39 @@ id_to_sensor = {
 class SerialThread(QRunnable):
     '''
     Main Serial Thread
+
+    Args:
+    graphs -
+
+    sensor_nums - a dictionary of the format
+        sensor_type:# in use
+
+    valve_signals -  is a dictionary that is kinda acting like a queue...
+    should replace it with an actual queue. Right now it has all values set to 0, and will send the
+    value as a message if it is non-zero
+
+    filename - the name of the file to write the data to
+
     '''
 
     running = True
 
-    def __init__(self, graphs, valve_signals, filename):
+    def __init__(self, graphs, sensor_nums, valve_signals, filename):
         super(SerialThread, self).__init__()
         self.signals = SerialSignals()
         self.name = "Serial Thread"
+
+        # ---------- Serial Config ----------------------------------
+
+        self.graph_titles = {'low_pt':['Lox Tank', 'Propane Tank', 'Lox Injector', 'Propane Injector']}
+
+        self.numLowPressure = 3
+        self.numHighPressure = 1
+        self.ser = None
+
+        self.valve_signals = valve_signals
+        self.filename = filename
+
 
         # ---------- Display Config ---------------------------------
 
@@ -47,24 +72,17 @@ class SerialThread(QRunnable):
         # plot_refs = self.canvas.axes.plot(self.xdata, self.ydata, 'b')
         # self._plot_ref = plot_refs[0]
 
-
+        # Create canvases based on the number of sensors that are actually in use
         self.low_plot_ref_list = []#[self._plot_ref]
         self.canvas_list = []
+
         for i in range(len(graphs["low_pt"])):
             canvas = graphs["low_pt"][i]
             self.canvas_list.append(canvas)
+            # Get plot reference that can be used to update graph later
             plot_refs = canvas.axes.plot(self.xdata, self.ydata, 'b')
             self.low_plot_ref_list.append(plot_refs[0])
-
-
-        # ---------- Serial Config ----------------------------------
-
-        self.numLowPressure = 3
-        self.numHighPressure = 1
-        self.ser = None
-
-        self.valve_signals = valve_signals
-        self.filename = filename
+            canvas.axes.set_title(self.graph_titles["low_pt"][i])
 
 
     @pyqtSlot()
