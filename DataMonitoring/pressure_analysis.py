@@ -26,6 +26,7 @@ amountOfData3 = len(tankData3)
 currPressureData3 = np.asarray([0] * amountOfData3)
 
 #function for detecting peaks in data
+##example: detect2(tankData)
 def detect2(data):
     xaxis = np.arange(0,len(data),1)
     print("Amount of Data Points:", len(data))
@@ -157,21 +158,5 @@ def detect2(data):
             
             
 
-###function for running detection with array of data as input
-##example: test(amountOfData, tankData)
 
-def test2(dataamount, datatank):
-    plt.figure(dpi=150)
-    allPressures = []
-    drops=[]
-    xaxis = np.arange(0,dataamount,1)
-    for i in range(0, dataamount):
-        currPressureData[i] = datatank[i]
-    
-        
-
-        
-        allPressures.append(datatank[i])
-       
-    detect2(allPressures)
 
