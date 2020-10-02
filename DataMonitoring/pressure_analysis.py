@@ -143,6 +143,7 @@ def detect2(data):
     for ii in range(len(peaks3)):
         plt.plot((peaks3[ii], peaks3[ii]), (-150, 150), 'r')
 
+    
     plt.show()
 
     plt.figure(dpi=150)
